@@ -46,9 +46,9 @@ class RandomNumberGenerator:
         ValueError
             If ``destination_folder`` is not a directory.
         """
-        ss = SeedSequence(self.master_seed)
+        seed_seq = SeedSequence(self.master_seed)
 
-        child_seeds = ss.spawn(self.n_players)
+        child_seeds = seed_seq.spawn(self.n_players)
 
         if not destination_folder.is_dir():
             raise ValueError('destination folder is not a directory.')
