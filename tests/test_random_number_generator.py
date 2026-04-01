@@ -9,7 +9,7 @@ SRC_PATH = PROJECT_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-from uu.ai.core.functions import RandomNumberGenerator
+from uu.ai.thesis.core.functions import RandomNumberGenerator
 
 
 def test_generate_creates_player_streams_and_seed_file(tmp_path: Path) -> None:
