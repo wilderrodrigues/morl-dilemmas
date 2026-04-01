@@ -16,16 +16,21 @@ class RandomNumberGenerator:
         Root seed used to derive reproducible player-specific generators.
     """
 
-    def __init__(self, master_seed: int) -> None:
+    def __init__(self, master_seed: int, n_players: int = 2, n_children: int = 5) -> None:
         """Initialize the random stream generator.
 
         Parameters
         ----------
         master_seed : int
             Root seed used to derive reproducible child seed sequences.
+        n_players : int
+            Number of players to generate.
+        n_children : int
+            Number of children to generate.
         """
         self.master_seed = master_seed
-        self.n_players = 2
+        self.n_players = n_players
+        self.n_children = n_children
         self.player_streams = [list() for _ in range(self.n_players)]
 
     def generate(self, destination_folder: Path) -> None:
@@ -62,5 +67,5 @@ class RandomNumberGenerator:
             logger.info(f"child seeds generated in {destination_folder} for players 1 and 2.")
 
         for player in range(self.n_players):
-            grandchildren_player = child_seeds[player].spawn(5)
+            grandchildren_player = child_seeds[player].spawn(self.n_children)
             self.player_streams[player] = [default_rng(s) for s in grandchildren_player]
