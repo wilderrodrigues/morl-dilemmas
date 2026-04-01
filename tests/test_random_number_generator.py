@@ -1,5 +1,4 @@
-"""Unit tests for the random number generator utilities."""
-
+# MIT License - 2026
 from pathlib import Path
 import sys
 
