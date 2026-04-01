@@ -1,0 +1,62 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Native extensions and build outputs
+*.so
+*.dylib
+*.dll
+build/
+dist/
+site/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Test, type-check, and lint caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments and Conda local state
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+.python-version
+.conda/
+
+# Jupyter and interactive work
+.ipynb_checkpoints/
+
+# Logs and local runtime files
+*.log
+*.out
+*.err
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.idea/
+.vscode/
+*.iml
+
+# Generated figures, tables, and experiment artifacts
+results/
+outputs/
+artifacts/
+reports/
+figures/
+dataframe_image/
