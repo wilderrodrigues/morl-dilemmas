@@ -20,7 +20,7 @@ class Player:
         Mixing parameter used only by the mixed virtue ethics agent.
     """
 
-    def __init__(self, strategy: Strategy, eps_theta: float, eps_decay: float, mixed_beta: int | None = None) -> None:
+    def __init__(self, strategy: Strategy, eps_theta: float, eps_decay: float, mixed_beta: float | None = None) -> None:
         """Initialize the player configuration and learning state.
 
         Parameters
@@ -31,11 +31,10 @@ class Player:
             Initial epsilon value for epsilon-greedy exploration.
         eps_decay : float
             Flag-like value indicating whether epsilon decay is enabled.
-        mixed_beta : int | None, optional
+        mixed_beta : float | None, optional
             Mixing parameter used only by the mixed virtue ethics agent.
         """
         # Cooperate on the first move if strategy is either Tit-for-Tat or Q-Learning
-        self.initial_move = False
         self.strategy = strategy
         self.eps_theta = eps_theta
         self.eps_decay = eps_decay
