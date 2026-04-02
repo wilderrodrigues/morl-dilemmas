@@ -12,7 +12,7 @@ class Player:
     ----------
     strategy : Strategy
         Strategy configuration used by the player.
-    eps_zero : float
+    eps_theta : float
         Initial epsilon value for epsilon-greedy exploration.
     eps_decay : float
         Flag-like value indicating whether epsilon decay is enabled.
@@ -20,14 +20,14 @@ class Player:
         Mixing parameter used only by the mixed virtue ethics agent.
     """
 
-    def __init__(self, strategy: Strategy, eps_zero: float, eps_decay: float, mixed_beta: int | None = None) -> None:
+    def __init__(self, strategy: Strategy, eps_theta: float, eps_decay: float, mixed_beta: int | None = None) -> None:
         """Initialize the player configuration and learning state.
 
         Parameters
         ----------
         strategy : Strategy
             Strategy configuration used by the player.
-        eps_zero : float
+        eps_theta : float
             Initial epsilon value for epsilon-greedy exploration.
         eps_decay : float
             Flag-like value indicating whether epsilon decay is enabled.
@@ -37,7 +37,7 @@ class Player:
         # Cooperate on the first move if strategy is either Tit-for-Tat or Q-Learning
         self.initial_move = False
         self.strategy = strategy
-        self.eps_zero = eps_zero
+        self.eps_theta = eps_theta
         self.eps_decay = eps_decay
         # Will only be used for QLVE_m agent
         self.mixed_beta = mixed_beta
@@ -69,7 +69,7 @@ class Player:
         policy = EpsilonGreedy(random_numbers=random_numbers, q_values=self.q_values, state_index=state)
         exploration_policy = ExplorationPolicy(policy=policy)
         move, eps, reason = exploration_policy.use_policy(iteration=iteration, total_iterations=num_iter,
-                                                          eps_zero=self.eps_zero,
+                                                          eps_theta=self.eps_theta,
                                                           eps_decay=self.eps_decay)
         return int(bool(move)), eps, reason, random_numbers
 

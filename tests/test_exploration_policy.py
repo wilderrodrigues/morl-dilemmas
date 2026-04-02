@@ -25,11 +25,11 @@ class StubPolicy(Policy):
         self,
         iteration: int,
         total_iterations: int,
-        eps_zero: float,
+        eps_theta: float,
         eps_decay: float,
     ) -> tuple[int, float, str]:
         """Record the incoming arguments and return a predefined result."""
-        self.calls.append((iteration, total_iterations, eps_zero, eps_decay))
+        self.calls.append((iteration, total_iterations, eps_theta, eps_decay))
         return self.result
 
 
@@ -42,7 +42,7 @@ def test_use_policy_delegates_to_configured_policy() -> None:
     result = exploration_policy.use_policy(
         iteration=10,
         total_iterations=100,
-        eps_zero=0.15,
+        eps_theta=0.15,
         eps_decay=False,
     )
 
@@ -62,7 +62,7 @@ def test_use_policy_with_epsilon_greedy_returns_greedy_action() -> None:
     result = exploration_policy.use_policy(
         iteration=10,
         total_iterations=100,
-        eps_zero=0.15,
+        eps_theta=0.15,
         eps_decay=False,
     )
 

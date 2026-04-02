@@ -9,7 +9,7 @@ class Policy(ABC):
     """Abstract interface for exploration policies."""
 
     @abstractmethod
-    def update(self, iteration: int, total_iterations: int, eps_zero: float, eps_decay: float) -> tuple[
+    def update(self, iteration: int, total_iterations: int, eps_theta: float, eps_decay: float) -> tuple[
         int, float, str]:
         """Update the policy and select an action.
 
@@ -19,7 +19,7 @@ class Policy(ABC):
             Current training iteration.
         total_iterations : int
             Total number of training iterations.
-        eps_zero : float
+        eps_theta : float
             Initial epsilon value used for exploration.
         eps_decay : float
             Flag-like value indicating whether epsilon decay should be applied.
@@ -52,7 +52,7 @@ class EpsilonGreedy(Policy):
         self.q_values = q_values
         self.state_index = state_index
 
-    def update(self, iteration: int, total_iterations: int, eps_zero: float, eps_decay: float) -> tuple[
+    def update(self, iteration: int, total_iterations: int, eps_theta: float, eps_decay: float) -> tuple[
         int, float, str]:
         """Select an action using an epsilon-greedy decision rule.
 
@@ -62,7 +62,7 @@ class EpsilonGreedy(Policy):
             Current training iteration.
         total_iterations : int
             Total number of training iterations.
-        eps_zero : float
+        eps_theta : float
             Initial epsilon value used for exploration.
         eps_decay : float
             Flag-like value indicating whether epsilon should decay over time.
@@ -75,9 +75,9 @@ class EpsilonGreedy(Policy):
         """
         prob = self.random_numbers[1]
         if not eps_decay:
-            eps = eps_zero  # try 0.05 #0.01 #0.001
+            eps = eps_theta  # try 0.05 #0.01 #0.001
         else:  # if I need to implement eps_decay and eps0 has been pre-defined
-            eps_initial = eps_zero
+            eps_initial = eps_theta
             eps_final = 0
             r = max((int(total_iterations) - int(iteration)) / int(total_iterations), 0)
             eps = (eps_initial - eps_final) * r + eps_final
@@ -110,7 +110,7 @@ class ExplorationPolicy:
         """
         self.policy = policy
 
-    def use_policy(self, iteration: int, total_iterations: int, eps_zero: float, eps_decay: float) -> tuple[
+    def use_policy(self, iteration: int, total_iterations: int, eps_theta: float, eps_decay: float) -> tuple[
         int, float, str]:
         """Execute the configured exploration policy.
 
@@ -120,7 +120,7 @@ class ExplorationPolicy:
             Current training iteration.
         total_iterations : int
             Total number of training iterations.
-        eps_zero : float
+        eps_theta : float
             Initial epsilon value used for exploration.
         eps_decay : float
             Flag-like value indicating whether epsilon decay should be applied.
@@ -131,4 +131,4 @@ class ExplorationPolicy:
             Selected action, effective epsilon value, and the reason for the
             action choice.
         """
-        return self.policy.update(iteration, total_iterations, eps_zero, eps_decay)
+        return self.policy.update(iteration, total_iterations, eps_theta, eps_decay)
