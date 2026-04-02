@@ -76,7 +76,7 @@ class EpsilonGreedy(Policy):
         prob = self.random_numbers[1]
         if not eps_decay:
             eps = eps_theta  # try 0.05 #0.01 #0.001
-        else:  # if I need to implement eps_decay and eps0 has been pre-defined
+        else:  # if I need to implement eps_decay and eps_theta has been pre-defined
             eps_initial = eps_theta
             eps_final = 0
             r = max((int(total_iterations) - int(iteration)) / int(total_iterations), 0)
