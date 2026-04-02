@@ -14,19 +14,19 @@ class Reward(ABC):
 
     Parameters
     ----------
-    payoff_format : list[list[tuple[int, int]]]
+    payoff_matrix : list[list[tuple[int, int]]]
         Payoff matrix indexed by the actions of player 1 and player 2.
     """
 
-    def __init__(self, payoff_format: list[list[tuple[int, int]]]) -> None:
+    def __init__(self, payoff_matrix: list[list[tuple[int, int]]]) -> None:
         """Store the payoff matrix used by the reward function.
 
         Parameters
         ----------
-        payoff_format : list[list[tuple[int, int]]]
+        payoff_matrix : list[list[tuple[int, int]]]
             Payoff matrix indexed by the actions of player 1 and player 2.
         """
-        self.payoff_format = payoff_format
+        self.payoff_matrix = payoff_matrix
 
     @abstractmethod
     def reward(self, action_p1: int, action_p2: int) -> list[int]:
@@ -65,24 +65,24 @@ class ExtrinsicReward(Reward):
         list[int]
             Extrinsic rewards for player 1 and player 2.
         """
-        pay1, pay2 = self.payoff_format[action_p1][action_p2][0], self.payoff_format[action_p1][action_p2][1]
+        pay1, pay2 = self.payoff_matrix[action_p1][action_p2][0], self.payoff_matrix[action_p1][action_p2][1]
         return [pay1, pay2]
 
 
 class IntrinsicReward(Reward):
     """Reward function derived from the player's configured moral type."""
 
-    def __init__(self, payoff_format: list[list[tuple[int, int]]], player: Player) -> None:
+    def __init__(self, payoff_matrix: list[list[tuple[int, int]]], player: Player) -> None:
         """Initialize the intrinsic reward calculator.
 
         Parameters
         ----------
-        payoff_format : list[list[tuple[int, int]]]
+        payoff_matrix : list[list[tuple[int, int]]]
             Payoff matrix indexed by the actions of player 1 and player 2.
         player : Player
             Player whose morality determines the intrinsic reward formulation.
         """
-        super().__init__(payoff_format=payoff_format)
+        super().__init__(payoff_matrix=payoff_matrix)
         self.player = player
         self.state: tuple[int, int] | None = None
         # The constant that defines reward & punishment values for norm-based agents
@@ -115,7 +115,7 @@ class IntrinsicReward(Reward):
             does not use an intrinsic reward component.
         """
         # Create the baseline individual payoffs, as defined in the IPD game
-        pay1, pay2 = self.payoff_format[action_p1][action_p2][0], self.payoff_format[action_p1][action_p2][1]
+        pay1, pay2 = self.payoff_matrix[action_p1][action_p2][0], self.payoff_matrix[action_p1][action_p2][1]
 
         pay1_intrinsic = None
         if self.player.strategy.value[1] == Morality.UTILITARIAN:
@@ -171,7 +171,7 @@ class UtilitarianReward(Reward):
         float
             Sum of both players' extrinsic rewards.
         """
-        pay1, pay2 = self.payoff_format[action_p1][action_p2][0], self.payoff_format[action_p1][action_p2][1]
+        pay1, pay2 = self.payoff_matrix[action_p1][action_p2][0], self.payoff_matrix[action_p1][action_p2][1]
         pay_final = pay1 + pay2
         return pay_final
 
@@ -194,7 +194,7 @@ class VirtueReward(Reward):
         float
             Ratio-based reward reflecting payoff balance.
         """
-        pay1, pay2 = self.payoff_format[action_p1][action_p2][0], self.payoff_format[action_p1][action_p2][1]
+        pay1, pay2 = self.payoff_matrix[action_p1][action_p2][0], self.payoff_matrix[action_p1][action_p2][1]
         pay_final = (min(pay1, pay2) + 1) / (max(pay1, pay2) + 1)
         return pay_final
 
@@ -217,7 +217,7 @@ class GiniReward(Reward):
         float
             Equality reward derived from the players' payoffs.
         """
-        pay1, pay2 = self.payoff_format[action_p1][action_p2][0], self.payoff_format[action_p1][action_p2][1]
+        pay1, pay2 = self.payoff_matrix[action_p1][action_p2][0], self.payoff_matrix[action_p1][action_p2][1]
         pay_final = 1 - ((abs(pay1 - pay2)) / (pay1 + pay2))
         return pay_final
 
@@ -240,7 +240,7 @@ class MinimumReward(Reward):
         float
             Minimum of the two players' extrinsic rewards.
         """
-        pay1, pay2 = self.payoff_format[action_p1][action_p2][0], self.payoff_format[action_p1][action_p2][1]
+        pay1, pay2 = self.payoff_matrix[action_p1][action_p2][0], self.payoff_matrix[action_p1][action_p2][1]
         pay_final = min(pay1, pay2)
         return pay_final
 
@@ -254,13 +254,13 @@ class Game(ABC):
         First player in the game.
     player2 : Player
         Second player in the game.
-    payoff_format : list[list[tuple[int, int]]]
+    payoff_matrix : list[list[tuple[int, int]]]
         Payoff matrix indexed by the actions of player 1 and player 2.
     """
     PLAYER_1: int = 0
     PLAYER_2: int = 1
 
-    def __init__(self, player1: Player, player2: Player, payoff_format: list[list[tuple[int, int]]]) -> None:
+    def __init__(self, player1: Player, player2: Player, payoff_matrix: list[list[tuple[int, int]]]) -> None:
         """Initialize the game state and shared bookkeeping.
 
         Parameters
@@ -269,12 +269,12 @@ class Game(ABC):
             First player in the game.
         player2 : Player
             Second player in the game.
-        payoff_format : list[list[tuple[int, int]]]
+        payoff_matrix : list[list[tuple[int, int]]]
             Payoff matrix indexed by the actions of player 1 and player 2.
         """
         self.player1 = player1
         self.player2 = player2
-        self.payoff_format = payoff_format
+        self.payoff_matrix = payoff_matrix
         self.history = list()  # TODO make this a circular array / queue instead
         self.opponents = {player1: player2, player2: player1}
         self.state_index_converter = {(0, 0): 0, (0, 1): 1, (1, 0): 2, (1, 1): 3}
@@ -327,7 +327,7 @@ class Game(ABC):
 class IterativePrisonersDilemma(Game):
     """Iterated Prisoner's Dilemma with extrinsic and moral reward tracking."""
 
-    def __init__(self, player1: Player, player2: Player, payoff_format: list[list[tuple[int, int]]]) -> None:
+    def __init__(self, player1: Player, player2: Player, payoff_matrix: list[list[tuple[int, int]]]) -> None:
         """Initialize reward calculators for the iterated prisoner's dilemma.
 
         Parameters
@@ -336,17 +336,17 @@ class IterativePrisonersDilemma(Game):
             First player in the game.
         player2 : Player
             Second player in the game.
-        payoff_format : list[list[tuple[int, int]]]
+        payoff_matrix : list[list[tuple[int, int]]]
             Payoff matrix indexed by the actions of player 1 and player 2.
         """
-        super().__init__(player1=player1, player2=player2, payoff_format=payoff_format)
-        self.extrinsic_reward = ExtrinsicReward(payoff_format=payoff_format)
-        self.intrinsic_reward_p1 = IntrinsicReward(payoff_format=payoff_format, player=player1)
-        self.intrinsic_reward_p2 = IntrinsicReward(payoff_format=payoff_format, player=player2)
-        self.utilitarian_reward = UtilitarianReward(payoff_format=payoff_format)
-        self.virtue_reward = VirtueReward(payoff_format=payoff_format)
-        self.gini_reward = GiniReward(payoff_format=payoff_format)
-        self.minimum_reward = MinimumReward(payoff_format=payoff_format)
+        super().__init__(player1=player1, player2=player2, payoff_matrix=payoff_matrix)
+        self.extrinsic_reward = ExtrinsicReward(payoff_matrix=payoff_matrix)
+        self.intrinsic_reward_p1 = IntrinsicReward(payoff_matrix=payoff_matrix, player=player1)
+        self.intrinsic_reward_p2 = IntrinsicReward(payoff_matrix=payoff_matrix, player=player2)
+        self.utilitarian_reward = UtilitarianReward(payoff_matrix=payoff_matrix)
+        self.virtue_reward = VirtueReward(payoff_matrix=payoff_matrix)
+        self.gini_reward = GiniReward(payoff_matrix=payoff_matrix)
+        self.minimum_reward = MinimumReward(payoff_matrix=payoff_matrix)
 
     def step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int, global_history: DataFrame,
              num_iter: int, random_numbers_stream: RandomNumberGenerator) -> tuple[
