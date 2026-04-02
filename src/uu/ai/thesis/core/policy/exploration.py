@@ -36,12 +36,12 @@ class Policy(ABC):
 class EpsilonGreedy(Policy):
     """Epsilon-greedy exploration policy."""
 
-    def __init__(self, random_numbers: list[float], q_values: npt.NDArray[np.float32], state_index: int):
+    def __init__(self, random_numbers: npt.NDArray[np.float32], q_values: npt.NDArray[np.float32], state_index: int):
         """Initialize the epsilon-greedy policy.
 
         Parameters
         ----------
-        random_numbers : list[float]
+        random_numbers : npt.NDArray[np.float32]
             Precomputed random values used to sample exploratory actions.
         q_values : npt.NDArray[np.float32]
             Estimated action values for each state-action pair.
@@ -110,7 +110,7 @@ class ExplorationPolicy:
         """
         self.policy = policy
 
-    def use_policy(self, iteration, total_iterations, eps_zero, eps_decay) -> tuple[
+    def use_policy(self, iteration: int, total_iterations: int, eps_zero: float, eps_decay: float) -> tuple[
         int, float, str]:
         """Execute the configured exploration policy.
 

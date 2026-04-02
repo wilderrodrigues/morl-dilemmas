@@ -19,7 +19,7 @@ class StubPolicy(Policy):
 
     def __init__(self, result: tuple[int, float, str]) -> None:
         self.result = result
-        self.calls: list[tuple[int, int, float, bool]] = []
+        self.calls: list[tuple[int, int, float, float]] = []
 
     def update(
         self,
@@ -53,7 +53,7 @@ def test_use_policy_delegates_to_configured_policy() -> None:
 def test_use_policy_with_epsilon_greedy_returns_greedy_action() -> None:
     """Use the wrapped epsilon-greedy policy to select the greedy action."""
     epsilon_greedy_policy = EpsilonGreedy(
-        random_numbers=[0.2, 0.9, 0.1],
+        random_numbers=np.array([0.2, 0.9, 0.1]),
         q_values=np.array([[0.1, 0.9], [0.8, 0.2]]),
         state_index=0,
     )
