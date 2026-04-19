@@ -15,7 +15,7 @@ import typer
 from uu import logger
 from uu.ai.thesis.cli import payoff_matrices
 from uu.ai.thesis.cli.setup.match import create_pair_of_players, store_raw_data, save_history, run_one_episode_static, \
-    run_one_episode_mixed, store_learning_data
+    run_one_episode_mixed, store_learning_data, run_one_episode
 from uu.ai.thesis.core.data.model import build_game_config, GameConfig
 from uu.ai.thesis.core.environment.game import IterativePrisonersDilemma
 from uu.ai.thesis.core.functions import RandomNumberGenerator
@@ -92,7 +92,7 @@ def run_static(config: GameConfig) -> None:
     store_raw_data(destination_folder=results_path, num_runs=num_runs)
 
 
-def run_mixed_and_save(config: GameConfig) -> None:
+def run_qlearning_vs_static(config: GameConfig) -> None:
     """Run mixed-strategy IPD experiments and persist histories and learning outputs.
 
     Parameters
@@ -149,7 +149,7 @@ def run_mixed_and_save(config: GameConfig) -> None:
     rng = RandomNumberGenerator(master_seed)
     rng.generate(results_path)
 
-    optmial_policies = list()
+    optimal_policies = list()
     q_values_player1 = list()
     counter = 0
     for player1, player2 in pairs_of_players:
@@ -160,7 +160,7 @@ def run_mixed_and_save(config: GameConfig) -> None:
                                                                                  game=game, num_iter=num_iterations,
                                                                                  random_numbers_stream=rng)
         save_history(history=global_history, run_idx=counter, destination_folder=results_path)
-        optmial_policies.append(result)  # Save the optimal policies
+        optimal_policies.append(result)  # Save the optimal policies
         q_values_player1.append(history_q_values_player1)
         logger.info(f"Finished run {counter}, {title1} vs {title2}.")
 
@@ -168,15 +168,100 @@ def run_mixed_and_save(config: GameConfig) -> None:
     store_raw_data(destination_folder=results_path, num_runs=num_runs)
 
     # Store learnt optimal policies and learnt Q-values over time
-    store_learning_data(optimal_policies=optmial_policies, q_values_player_1=q_values_player1, q_values_player_2=None,
+    store_learning_data(optimal_policies=optimal_policies, q_values_player_1=q_values_player1, q_values_player_2=None,
                         destination_folder=results_path)
+
+
+def run_qlearning_vs_qlearning(config: GameConfig) -> None:
+    """Run experiments with two Q-learning players and persist all outputs.
+
+    Parameters
+    ----------
+    config : GameConfig
+        Resolved experiment configuration. The function uses the configured
+        player titles, game type, number of runs, number of iterations,
+        destination folder, and master seed to build player pairs, initialize
+        reproducible random-number streams, execute one learning episode per
+        run, and store both per-run histories and aggregated learning
+        artifacts.
+
+    Returns
+    -------
+    None
+        This function writes experiment results to disk and does not return a
+        value.
+
+    Raises
+    ------
+    ValueError
+        If either player title does not identify a Q-learning strategy,
+        determined by the absence of ``"QL"`` in ``config.title1`` or
+        ``config.title2``. This runner expects both players to learn.
+
+    Notes
+    -----
+    Results are written under ``results/<destination_folder>``. For each run,
+    the function stores the episode history, collects the learned policies for
+    both players, and records both Q-value trajectories before writing the
+    aggregated raw and learning outputs.
+    """
+    title1 = config.title1
+    title2 = config.title2
+    num_runs = config.num_runs
+    num_iterations = config.num_iterations
+    destination_folder = config.destination_folder
+    master_seed = config.master_seed
+
+    logger.info(
+        f"Running {title1} vs {title2}, {num_runs} runs, {num_iterations} iterations each, storing in {destination_folder}")
+
+    if 'QL' not in title1 or 'QL' not in title2:
+        raise ValueError("This is not the right function for these player types!")
+
+    results_path = Path("results") / destination_folder
+    results_path.mkdir(parents=True, exist_ok=True)
+
+    strategy_p1 = Strategy[title1]
+    strategy_p2 = Strategy[title2]
+    pairs_of_players = create_pair_of_players(game_config=config, strategy_p1=strategy_p1, strategy_p2=strategy_p2,
+                                              num_runs=num_runs)
+
+    # Instantiate the RN_generator before I run my n runs - so that all n runs share a single set of RN streams (4, to be exact) and read from it sequentially
+    rng = RandomNumberGenerator(master_seed)
+    rng.generate(results_path)
+
+    optimal_policies = list()
+    q_values_player1 = list()
+    q_values_player2 = list()
+    counter = 0
+    for player1, player2 in pairs_of_players:
+        counter += 1
+        game = IterativePrisonersDilemma(player1, player2, payoff_matrices[config.game_type])
+        global_history, result, history_q_values_player1, history_q_values_player2 = run_one_episode(config=config,
+                                                                                                   counter=counter,
+                                                                                                   destination_folder=results_path,
+                                                                                                   game=game,
+                                                                                                   num_iter=num_iterations,
+                                                                                                   random_numbers_stream=rng)
+        optimal_policies.append(result)  # save the optimal policies
+        q_values_player1.append(history_q_values_player1)
+        q_values_player2.append(history_q_values_player2)
+        save_history(history=global_history, run_idx=counter, destination_folder=results_path)
+        logger.info(f"Finished run {counter}, {title1} vs {title2}")
+
+    ## Store raw data - all 100 data points for each type of reward:
+    store_raw_data(destination_folder=results_path, num_runs=num_runs)
+
+    # Store learnt optimal policies and learnt Q-values over time
+    store_learning_data(optimal_policies=optimal_policies, q_values_player_1=q_values_player1,
+                        q_values_player_2=q_values_player2, destination_folder=results_path)
 
 
 @app.command()
 def main(
         title1: Annotated[str, typer.Option(help="Short title for player 1.")],
         title2: Annotated[str, typer.Option(help="Short title for player 2.")],
-        game_type: Annotated[str, typer.Option( help="Game to run, e.g. 'ipd', 'ish', 'ivd'.")] = "ipd",
+        game_type: Annotated[str, typer.Option(help="Game to run, e.g. 'ipd', 'ish', 'ivd'.")] = "ipd",
         master_seed: Annotated[int | None, typer.Option(help="Master seed for reproducible random streams.")] = None,
         num_iterations: Annotated[int | None, typer.Option(help="Iterations per run.")] = None,
         num_runs: Annotated[int | None, typer.Option(help="Number of runs with different seeds.")] = None,
@@ -239,11 +324,10 @@ def main(
     if 'QL' in title1:
         if 'QL' in title2:
             logger.info("Both players are Q-learning, running mixed strategy.")
-            logger.warning("Not implemented yet, so running static strategy for now!")
-            run_static(config=config)
+            run_qlearning_vs_qlearning(config=config)
         else:
             logger.info("Player 2 is not a Q-learning player, running static strategy.")
-            run_mixed_and_save(config=config)
+            run_qlearning_vs_static(config=config)
     else:
         logger.info("Player 1 is not a Q-learning player, running static strategy.")
         run_static(config=config)

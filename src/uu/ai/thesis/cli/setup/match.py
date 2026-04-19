@@ -308,7 +308,7 @@ def store_learning_data(optimal_policies: list, q_values_player_1: list, q_value
 
 
 def run_one_episode_mixed(config: GameConfig, counter: int, destination_folder: Path, game: Game, num_iter: int,
-                           random_numbers_stream: RandomNumberGenerator) -> tuple[DataFrame, np.ndarray, np.ndarray]:
+                          random_numbers_stream: RandomNumberGenerator) -> tuple[DataFrame, np.ndarray, np.ndarray]:
     """Run one mixed episode with a learning player and record learning outputs.
 
     Parameters
@@ -376,7 +376,8 @@ def run_one_episode_mixed(config: GameConfig, counter: int, destination_folder: 
                                                                                                           state_player2,
                                                                                                           iteration,
                                                                                                           global_history,
-                                                                                                          num_iter, random_numbers_stream)
+                                                                                                          num_iter,
+                                                                                                          random_numbers_stream)
 
         state_index_player1 = state_index_converter[state_player1]
 
@@ -388,7 +389,7 @@ def run_one_episode_mixed(config: GameConfig, counter: int, destination_folder: 
         # NOTE the above will choose C,C when all cells are 0 --> will need to wait until random exploration to try D instead of C...
         player_1.q_values[state_index_player1, action_player1] *= 1 - alpha  # TO DO change this to state_index
         player_1.q_values[state_index_player1, action_player1] += alpha * (
-                    reward_learning_player1 + config.gamma * next_value_player1)
+                reward_learning_player1 + config.gamma * next_value_player1)
         state_player1 = next_state_player1
 
         state_player2 = next_state_player2
@@ -468,3 +469,126 @@ def run_one_episode_static(destination_folder: Path, game: Game, num_iter: int,
         state_player2 = next_state_player2
 
     return global_history
+
+
+def run_one_episode(config: GameConfig, counter: int, destination_folder: Path, game: Game, num_iter: int,
+                    random_numbers_stream: RandomNumberGenerator) -> tuple[
+    DataFrame, tuple[np.ndarray, np.ndarray], np.ndarray, np.ndarray]:
+    """Run one episode with two learning players and record training artifacts.
+
+    Parameters
+    ----------
+    config : GameConfig
+        Resolved experiment configuration containing the Q-learning
+        hyperparameters used for online value updates, including the learning
+        rate, decay, and discount factor.
+    counter : int
+        One-based run index used during state initialization and for deciding
+        whether to persist the Q-learning parameter snapshot on the first run.
+    destination_folder : Path
+        Experiment output folder used by the initialization routine when
+        writing auxiliary run metadata.
+    game : Game
+        Configured game environment with two learning players. The function
+        uses its players, state-index converter, and :meth:`step` method to
+        advance the episode and append step-level diagnostics to the shared
+        history dataframe.
+    num_iter : int
+        Number of training interactions to execute in the episode.
+    random_numbers_stream : RandomNumberGenerator
+        Reproducible random-number streams used for state initialization and
+        stochastic exploration inside the environment.
+
+    Returns
+    -------
+    tuple[DataFrame, tuple[np.ndarray, np.ndarray], np.ndarray, np.ndarray]
+        Four-element tuple containing the episode history dataframe, the
+        learned greedy policies for player 1 and player 2, the sequence of
+        player-1 Q-table snapshots, and the sequence of player-2 Q-table
+        snapshots.
+
+    Notes
+    -----
+    Both players are treated as Q-learning agents. Their Q-tables are reset to
+    zeros at the start of the episode, copied before each iteration, and then
+    updated online from the rewards and next-state values returned by
+    :meth:`game.step <uu.ai.thesis.core.environment.game.Game.step>`.
+    """
+    global_history = pd.DataFrame.from_dict({'state_player1': [None], 'action_player1': [None],
+                                             'state_player2': [None], 'action_player2': [None],
+                                             'reward_game_player1': [None], 'next_state_player1': [None],
+                                             'reward_game_player2': [None], 'next_state_player2': [None],
+                                             'reward_intrinsic_player1': [None], 'reward_intrinsic_player2': [None],
+                                             'reward_collective': [None], 'reward_ratio': [None], 'reward_gini': [None],
+                                             'reward_min': [None],
+                                             'reward_learning_player1': [None], 'reward_learning_player2': [None],
+                                             'eps_player1': [None], 'eps_player2': [None], 'reason_player1': [None],
+                                             'reason_player2': [None],
+                                             'RNs_player1': [None], 'RNs_player2': [None]})
+
+    # Q-Learning:
+    player_1 = game.player1
+    player_2 = game.player2
+
+    player_1.q_values = np.zeros((4, 2))
+    player_2.q_values = np.zeros((4, 2))
+    state_index_converter = game.state_index_converter
+
+    # Store myVars to allow the code to refer to a previously defined variable name - used to look up Q-value table for each agent
+    state_player1, state_player2 = reset_learning_parameters(game_config=config, counter=counter,
+                                                             destination_folder=destination_folder,
+                                                             random_numbers_stream=random_numbers_stream)
+
+    history_q_values_player_1 = []
+    history_q_values_player_2 = []
+
+    for iteration in range(num_iter):  # Default =10000 encounters of the game
+
+        history_q_values_player_1.append(player_1.q_values.copy())
+        history_q_values_player_2.append(player_2.q_values.copy())
+
+        # execute a step that interacts with the environment & updates global_history behind the scenes
+        action_player1, action_player2, next_state_player1, next_state_player2, reward_learning_player1, reward_learning_player2 = game.step(
+            state_player1, state_player2, iteration, global_history, num_iter, random_numbers_stream)
+
+        state_index_player1 = state_index_converter[state_player1]
+        state_index_player2 = state_index_converter[state_player2]
+
+        next_state_index_player1 = state_index_converter[next_state_player1]
+        next_state_index_player2 = state_index_converter[next_state_player2]
+
+        alpha = config.alpha_theta / (1 + iteration * config.decay)
+
+        # next_value_player1 = np.max(player1.Q_values[next_state_player1]) # greedy policy at the next step
+        next_value_player1 = np.max(player_1.q_values[next_state_index_player1])  # NEW
+        player_1.q_values[state_index_player1, action_player1] *= 1 - alpha
+        player_1.q_values[state_index_player1, action_player1] += alpha * (
+                reward_learning_player1 + config.gamma * next_value_player1)
+        state_player1 = next_state_player1
+
+        next_value_player2 = np.max(player_2.q_values[next_state_index_player2])  # NEW
+        player_2.q_values[state_index_player2, action_player2] *= 1 - alpha
+        player_2.q_values[state_index_player2, action_player2] += alpha * (
+                reward_learning_player2 + config.gamma * next_value_player2)
+        state_player2 = next_state_player2
+
+    history_q_values_player_1 = np.array(history_q_values_player_1)
+    history_q_values_player_2 = np.array(history_q_values_player_2)
+
+    result_player1 = np.zeros(4)  # np.argmax(player1.Q_values, axis=1)
+    for state in range(len(result_player1)):
+        if not np.any(player_1.q_values[state]):  # if empty
+            result_player1[state] = None
+        else:
+            result_player1[state] = np.argmax(player_1.q_values[state])  # , axis=1
+
+    result_player2 = np.zeros(4)  # np.argmax(player1.Q_values, axis=1)
+    for state in range(len(result_player2)):
+        if not np.any(player_2.q_values[state]):  # if empty
+            result_player2[state] = None
+        else:
+            result_player2[state] = np.argmax(player_2.q_values[state])  # , axis=1
+
+    result = (result_player1, result_player2)
+
+    return global_history, result, history_q_values_player_1, history_q_values_player_2
