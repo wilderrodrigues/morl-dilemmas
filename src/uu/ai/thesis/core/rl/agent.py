@@ -34,7 +34,7 @@ class Player:
         mixed_beta : float | None, optional
             Mixing parameter used only by the mixed virtue ethics agent.
         """
-        # Cooperate on the first move if strategy is either Tit-for-Tat or Q-Learning
+        # Cooperate on the first move if the strategy is either Tit-for-Tat or Q-Learning
         self.strategy = strategy
         self.eps_theta = eps_theta
         self.eps_decay = eps_decay
