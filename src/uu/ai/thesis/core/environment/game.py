@@ -319,7 +319,8 @@ class Game(ABC):
     @abstractmethod
     def static_step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int,
                     global_history: DataFrame,
-                    random_numbers_stream: RandomNumberGenerator) -> tuple[int, int, int, int, float, float]:
+                    random_numbers_stream: RandomNumberGenerator) -> tuple[
+        tuple[int, int], tuple[int, int]]:
         """Execute one step with two fixed-strategy players."""
         raise NotImplementedError
 

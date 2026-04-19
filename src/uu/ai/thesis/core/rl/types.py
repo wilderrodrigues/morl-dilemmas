@@ -16,6 +16,7 @@ class Morality(Enum):
     VIRTUE_ETHICS_MIXED = 5
     SELFISH = 6
 
+
 class Strategy(Enum):
     """Enumerate the supported agent strategy configurations.
 
@@ -33,3 +34,36 @@ class Strategy(Enum):
     QLVE_e = ("Q-Learning eps-greedy", Morality.VIRTUE_ETHICS_EQUALITY)
     QLVE_k = ("Q-Learning eps-greedy", Morality.VIRTUE_ETHICS_KINDNESS)
     QLVE_m = ("Q-Learning eps-greedy", Morality.VIRTUE_ETHICS_MIXED)
+
+    @staticmethod
+    def get_strategy(strategy: str) -> "Strategy":
+        """Return the enum member for a strategy key.
+
+        Parameters
+        ----------
+        strategy : str
+            Name of the :class:`Strategy` enum member to resolve.
+
+        Returns
+        -------
+        Strategy
+            The matching strategy enum member.
+        """
+        return Strategy[strategy]
+
+    @staticmethod
+    def get_morality(strategy: str) -> Morality:
+        """Return the morality associated with a strategy key.
+
+        Parameters
+        ----------
+        strategy : str
+            Name of the :class:`Strategy` enum member whose morality should be
+            returned.
+
+        Returns
+        -------
+        Morality
+            The morality associated with the resolved strategy.
+        """
+        return Strategy.get_strategy(strategy).value[1]
