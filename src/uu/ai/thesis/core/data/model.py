@@ -18,6 +18,8 @@ class GameConfig:
 
     Parameters
     ----------
+    game_type : str
+        The game type to run, e.g. 'ipd', 'ish', 'ivd'.
     title1 : str
         Short title identifying player 1.
     title2 : str
@@ -46,6 +48,7 @@ class GameConfig:
         Optional extra label appended to the destination folder name.
     """
 
+    game_type: str
     title1: str
     title2: str
     destination_folder: str
@@ -62,6 +65,7 @@ class GameConfig:
 
 
 def build_game_config(
+    game_type: str,
     title1: str,
     title2: str,
     master_seed: int | None = None,
@@ -79,6 +83,8 @@ def build_game_config(
 
     Parameters
     ----------
+    game_type : str
+        The game type to run, e.g. 'ipd', 'ish', 'ivd'.
     title1 : str
         Short title identifying player 1.
     title2 : str
@@ -150,6 +156,7 @@ def build_game_config(
         destination_folder += f"_beta{resolved_beta}"
 
     return GameConfig(
+        game_type=game_type,
         title1=title1,
         title2=title2,
         destination_folder=destination_folder,

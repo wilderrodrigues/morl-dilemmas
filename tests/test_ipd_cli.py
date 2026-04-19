@@ -12,7 +12,7 @@ SRC_PATH = PROJECT_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-from uu.ai.thesis.cli.ipd import app, build_game_config
+from uu.ai.thesis.cli.play import app, build_game_config
 
 
 runner = CliRunner()

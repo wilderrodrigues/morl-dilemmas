@@ -63,13 +63,13 @@ poetry install
 To make sure all is in place, run the following command:
 
 ```shell
-poetry run python -m uu.ai.thesis.cli.ipd --help
+poetry run python -m uu.ai.thesis.cli.play --help
 ```
 
 To get a quick experiment running, run the following command:
 
 ```shell
-poetry run python -m uu.ai.thesis.cli.ipd --title1 QLS --title2 AC --eps-theta 1.0 --eps-decay
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLS --title2 AC --eps-theta 1.0 --eps-decay
 ```
 
 ## Author

@@ -13,7 +13,7 @@ from typing import Annotated
 import typer
 
 from uu import logger
-from uu.ai.thesis.cli import PAYOFF_MATRIX_IPD
+from uu.ai.thesis.cli import payoff_matrices
 from uu.ai.thesis.cli.setup.match import create_pair_of_players, store_raw_data, save_history, run_one_episode_static, \
     run_one_episode_mixed, store_learning_data
 from uu.ai.thesis.core.data.model import build_game_config, GameConfig
@@ -83,7 +83,7 @@ def run_static(config: GameConfig) -> None:
     counter = 0
     for player1, player2 in pairs_of_players:
         counter += 1
-        game = IterativePrisonersDilemma(player1, player2, PAYOFF_MATRIX_IPD)
+        game = IterativePrisonersDilemma(player1, player2, payoff_matrices[config.game_type])
         global_history = run_one_episode_static(destination_folder=results_path, game=game,
                                                 num_iter=num_iterations, random_numbers_stream=rng)
         save_history(history=global_history, run_idx=counter, destination_folder=results_path)
@@ -154,7 +154,7 @@ def run_mixed_and_save(config: GameConfig) -> None:
     counter = 0
     for player1, player2 in pairs_of_players:
         counter += 1
-        game = IterativePrisonersDilemma(player1, player2, PAYOFF_MATRIX_IPD)
+        game = IterativePrisonersDilemma(player1, player2, payoff_matrices[config.game_type])
         global_history, result, history_q_values_player1 = run_one_episode_mixed(config=config, counter=counter,
                                                                                  destination_folder=results_path,
                                                                                  game=game, num_iter=num_iterations,
@@ -176,6 +176,7 @@ def run_mixed_and_save(config: GameConfig) -> None:
 def main(
         title1: Annotated[str, typer.Option(help="Short title for player 1.")],
         title2: Annotated[str, typer.Option(help="Short title for player 2.")],
+        game_type: Annotated[str, typer.Option( help="Game to run, e.g. 'ipd', 'ish', 'ivd'.")] = "ipd",
         master_seed: Annotated[int | None, typer.Option(help="Master seed for reproducible random streams.")] = None,
         num_iterations: Annotated[int | None, typer.Option(help="Iterations per run.")] = None,
         num_runs: Annotated[int | None, typer.Option(help="Number of runs with different seeds.")] = None,
@@ -191,6 +192,8 @@ def main(
 
     Parameters
     ----------
+    game_type: str
+        The game type to run, e.g. 'ipd', 'ish', 'ivd'.
     title1 : str
         Short title identifying player 1.
     title2 : str
@@ -217,6 +220,7 @@ def main(
         Optional extra label appended to the destination folder name.
     """
     config = build_game_config(
+        game_type=game_type,
         title1=title1,
         title2=title2,
         master_seed=master_seed,
@@ -232,8 +236,17 @@ def main(
     )
     typer.echo(json.dumps(asdict(config), indent=2, sort_keys=True))
 
-    # run_static(config=config)
-    run_mixed_and_save(config=config)
+    if 'QL' in title1:
+        if 'QL' in title2:
+            logger.info("Both players are Q-learning, running mixed strategy.")
+            logger.warning("Not implemented yet, so running static strategy for now!")
+            run_static(config=config)
+        else:
+            logger.info("Player 2 is not a Q-learning player, running static strategy.")
+            run_mixed_and_save(config=config)
+    else:
+        logger.info("Player 1 is not a Q-learning player, running static strategy.")
+        run_static(config=config)
 
 
 if __name__ == "__main__":
