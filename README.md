@@ -2,6 +2,12 @@
 
 This repository contains the code and materials for my Bachelor's thesis in Artificial Intelligence.
 
+## Disclaimer
+
+Most of the code has been adapted from the works performerd by Elizaveta _et al_. (2023). The existing code adaptation and
+structure of the framework has been fully developed by the author of this repository, Wilder Rodrigues (2023). The Python
+_docstrings_ have been generated using OpenAI Codex, GPT 5.4 (medium).  
+
 ## Abstract
 
 Multi-objective reinforcement learning (MORL) extends traditional reinforcement learning by allowing agents to optimize multiple, potentially conflicting objectives simultaneously. In this thesis, MORL is studied using a parametric non-linear utility function to model individual agents' risk preferences. This framework is combined with a predefined set of moral choice types, incorporated as intrinsic reward components grounded in moral theories.
@@ -30,17 +36,66 @@ This repository is currently in the early setup phase. Code, experiments, and re
 
 ## Setup
 
-The project currently uses a Conda environment defined in [`environment.yaml`](/Users/wilderrodrigues/dev/git/uni/thesis/morl-dilemmas/environment.yaml).
+The project currently uses a PyEnv in combination with Poetry. To set up the environment, run the following commands:
+
+* **NB:** _This setup is for MacOS only. Do some googling to get it working with Linux environments._
 
 ```bash
-conda env create -f environment.yaml
-conda activate morl-dilemmas
+brew install pyenv pyenv-virtualenv
+pyenv install 3.13.7
+pyenv activate 3.13.7
+```
+
+Once that's done, please proceed and install poetry:
+
+```shell
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+Now you are ready to install the project dependencies:
+
+```shell
+poetry install
+```
+
+### Quick test
+
+To make sure all is in place, run the following command:
+
+```shell
+poetry run python -m uu.ai.thesis.cli.ipd --help
+```
+
+To get a quick experiment running, run the following command:
+
+```shell
+poetry run python -m uu.ai.thesis.cli.ipd --title1 QLS --title2 AC --eps-theta 1.0 --eps-decay
 ```
 
 ## Author
 
-Wilder Rodrigues
+1. Wilder Rodrigues
 
 ## Supervisors
 
-Dr. Roxana Radulescu
+1. Dr. Roxana Radulescu
+2. Dr. Gerard Vreeswijk
+
+## Citations
+
+```bibtex
+@INPROCEEDINGS{Tennant-ijcai2023p36,
+  title     = {Modeling Moral Choices in Social Dilemmas with Multi-Agent Reinforcement Learning},
+  author    = {Tennant, Elizaveta and Hailes, Stephen and Musolesi, Mirco},
+  booktitle = {Proceedings of the Thirty-Second International Joint Conference on
+               Artificial Intelligence, {IJCAI-23}},
+  publisher = {International Joint Conferences on Artificial Intelligence Organization},
+  editor    = {Edith Elkind},
+  pages     = {317--325},
+  year      = {2023},
+  month     = {8},
+  note      = {Main Track},
+  doi       = {10.24963/ijcai.2023/36},
+  url       = {https://doi.org/10.24963/ijcai.2023/36},
+}
+```

@@ -14,7 +14,8 @@ import typer
 
 from uu import logger
 from uu.ai.thesis.cli import PAYOFF_MATRIX_IPD
-from uu.ai.thesis.cli.setup.match import create_pair_of_players, store_raw_data, save_history, run_one_episode_static
+from uu.ai.thesis.cli.setup.match import create_pair_of_players, store_raw_data, save_history, run_one_episode_static, \
+    run_one_episode_mixed, store_learning_data
 from uu.ai.thesis.core.data.model import build_game_config, GameConfig
 from uu.ai.thesis.core.environment.game import IterativePrisonersDilemma
 from uu.ai.thesis.core.functions import RandomNumberGenerator
@@ -72,7 +73,8 @@ def run_static(config: GameConfig) -> None:
 
     strategy_p1 = Strategy[title1]
     strategy_p2 = Strategy[title2]
-    pairs_of_players = create_pair_of_players(game_config=config, strategy_p1=strategy_p1, strategy_p2=strategy_p2, num_runs=num_runs)
+    pairs_of_players = create_pair_of_players(game_config=config, strategy_p1=strategy_p1, strategy_p2=strategy_p2,
+                                              num_runs=num_runs)
 
     # Instantiate the RandomNumberGenerator before I run my n runs - so that all n runs share a single set of RN streams (4, to be exact) and read from it sequentially
     rng = RandomNumberGenerator(master_seed)
@@ -90,20 +92,100 @@ def run_static(config: GameConfig) -> None:
     store_raw_data(destination_folder=results_path, num_runs=num_runs)
 
 
+def run_mixed_and_save(config: GameConfig) -> None:
+    """Run mixed-strategy IPD experiments and persist histories and learning outputs.
+
+    Parameters
+    ----------
+    config : GameConfig
+        Resolved experiment configuration. The function uses the configured
+        player titles, number of runs, number of iterations, destination
+        folder, and master seed to build player pairs, initialize reproducible
+        random-number streams, execute one mixed episode per run, and store
+        both per-run histories and aggregated learning artifacts.
+
+    Returns
+    -------
+    None
+        This function writes experiment results to disk and does not return a
+        value.
+
+    Raises
+    ------
+    ValueError
+        If player 1 is not a Q-learning strategy, identified by the absence of
+        ``"QL"`` in ``config.title1``. This runner expects a mixed matchup with
+        a learning player in the first position.
+
+    Notes
+    -----
+    Results are written under ``results/<destination_folder>``. For each run,
+    the function stores the episode history, accumulates the learned policy and
+    player-1 Q-value traces, then writes aggregated raw data and learning data
+    after all runs complete.
+    """
+    title1 = config.title1
+    title2 = config.title2
+    num_runs = config.num_runs
+    num_iterations = config.num_iterations
+    destination_folder = config.destination_folder
+    master_seed = config.master_seed
+
+    logger.info(
+        f"Running {title1} vs {title2}, {num_runs} runs, {num_iterations} iterations each, storing in {destination_folder}")
+
+    if 'QL' not in title1:
+        raise ValueError("This is not the right function for these player types!")
+
+    results_path = Path("results") / destination_folder
+    results_path.mkdir(parents=True, exist_ok=True)
+
+    strategy_p1 = Strategy[title1]
+    strategy_p2 = Strategy[title2]
+    pairs_of_players = create_pair_of_players(game_config=config, strategy_p1=strategy_p1, strategy_p2=strategy_p2,
+                                              num_runs=num_runs)
+
+    # Instantiate the RandomNumberGenerator before I run my n runs - so that all n runs share a single set of RN streams (4, to be exact) and read from it sequentially
+    rng = RandomNumberGenerator(master_seed)
+    rng.generate(results_path)
+
+    optmial_policies = list()
+    q_values_player1 = list()
+    counter = 0
+    for player1, player2 in pairs_of_players:
+        counter += 1
+        game = IterativePrisonersDilemma(player1, player2, PAYOFF_MATRIX_IPD)
+        global_history, result, history_q_values_player1 = run_one_episode_mixed(config=config, counter=counter,
+                                                                                 destination_folder=results_path,
+                                                                                 game=game, num_iter=num_iterations,
+                                                                                 random_numbers_stream=rng)
+        save_history(history=global_history, run_idx=counter, destination_folder=results_path)
+        optmial_policies.append(result)  # Save the optimal policies
+        q_values_player1.append(history_q_values_player1)
+        logger.info(f"Finished run {counter}, {title1} vs {title2}.")
+
+    ## Store raw data - all 100 data points for each type of reward
+    store_raw_data(destination_folder=results_path, num_runs=num_runs)
+
+    # Store learnt optimal policies and learnt Q-values over time
+    store_learning_data(optimal_policies=optmial_policies, q_values_player_1=q_values_player1, q_values_player_2=None,
+                        destination_folder=results_path)
+
+
 @app.command()
 def main(
-    title1: Annotated[str, typer.Option(help="Short title for player 1.")],
-    title2: Annotated[str, typer.Option(help="Short title for player 2.")],
-    master_seed: Annotated[int | None, typer.Option(help="Master seed for reproducible random streams.")] = None,
-    num_iterations: Annotated[int | None, typer.Option(help="Iterations per run.")] = None,
-    num_runs: Annotated[int | None, typer.Option(help="Number of runs with different seeds.")] = None,
-    eps_theta: Annotated[float | None, typer.Option(help="Initial exploration rate.")] = None,
-    eps_decay: Annotated[bool, typer.Option("--eps-decay/--no-eps-decay", help="Enable epsilon decay.")] = False,
-    alpha_theta: Annotated[float | None, typer.Option(help="Initial Q-learning rate.")] = None,
-    decay: Annotated[float | None, typer.Option(help="Learning-rate decay for Q-learning.")] = None,
-    gamma: Annotated[float | None, typer.Option(help="Discount factor for Q-learning.")] = None,
-    beta: Annotated[float | None, typer.Option(help="Relative weighting for mixed virtue rewards.")] = None,
-    extra: Annotated[str | None, typer.Option(help="Extra label to append to the destination folder.")] = None,
+        title1: Annotated[str, typer.Option(help="Short title for player 1.")],
+        title2: Annotated[str, typer.Option(help="Short title for player 2.")],
+        master_seed: Annotated[int | None, typer.Option(help="Master seed for reproducible random streams.")] = None,
+        num_iterations: Annotated[int | None, typer.Option(help="Iterations per run.")] = None,
+        num_runs: Annotated[int | None, typer.Option(help="Number of runs with different seeds.")] = None,
+        eps_theta: Annotated[float | None, typer.Option(help="Initial exploration rate.")] = None,
+        eps_decay: Annotated[bool, typer.Option("--eps-decay/--no-eps-decay", help="Enable epsilon decay.")] = False,
+        alpha_theta: Annotated[float | None, typer.Option(help="Initial Q-learning rate.")] = None,
+        decay: Annotated[float | None, typer.Option(help="Learning-rate decay for Q-learning.")] = None,
+        gamma: Annotated[float | None, typer.Option(help="Discount factor for Q-learning.")] = None,
+        beta: Annotated[float | None, typer.Option(help="Relative weighting for mixed virtue rewards.")] = None,
+        extra: Annotated[str | None, typer.Option(help="Extra label to append to the destination folder.")] = None,
 ) -> None:
     """Print the resolved IPD configuration as JSON.
 
@@ -150,7 +232,8 @@ def main(
     )
     typer.echo(json.dumps(asdict(config), indent=2, sort_keys=True))
 
-    run_static(config=config)
+    # run_static(config=config)
+    run_mixed_and_save(config=config)
 
 
 if __name__ == "__main__":

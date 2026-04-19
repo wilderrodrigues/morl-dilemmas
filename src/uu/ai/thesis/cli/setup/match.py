@@ -1,4 +1,10 @@
 # MIT License - 2026
+"""Helpers for running IPD matches and persisting experiment outputs.
+
+This module contains utilities for creating player pairs, executing episode
+loops for static and mixed settings, and exporting raw histories and learning
+artifacts to disk.
+"""
 import os
 from pathlib import Path
 import numpy as np
@@ -240,8 +246,199 @@ def save_history(history: DataFrame, run_idx: int, destination_folder: Path) -> 
     history.to_csv(os.fspath(destination_folder / "history" / f"run{run_idx}.csv"))
 
 
+def store_learning_data(optimal_policies: list, q_values_player_1: list, q_values_player_2: list | None,
+                        destination_folder: Path) -> None:
+    """Persist learned policies and Q-value histories for mixed-strategy runs.
+
+    Parameters
+    ----------
+    optimal_policies : list
+        Learned policy summaries collected across runs, typically one entry per
+        run describing the greedy action selected for each state.
+    q_values_player_1 : list
+        Sequence of player-1 Q-value histories accumulated during training,
+        where each entry contains the per-iteration Q-table snapshots for one
+        run.
+    q_values_player_2 : list | None
+        Optional sequence of player-2 Q-value histories. When ``None`` or
+        empty, only player-1 learning data are written.
+    destination_folder : Path
+        Output folder where the NumPy and text representations of the learning
+        artifacts are stored.
+
+    Returns
+    -------
+    None
+        This function writes learning artifacts to disk and does not return a
+        value.
+
+    Notes
+    -----
+    The function stores both ``.npy`` and ``.txt`` versions of the learned
+    policies and Q-value traces. Player-2 artifacts are only exported when
+    data are provided.
+    """
+    # Save RESULTS_list to numpy
+    np.save(destination_folder / "RESULTS_list.npy", optimal_policies, allow_pickle=True)
+
+    # Save RESULTS_list to txt
+    with open(destination_folder / "RESULTS_list.txt", 'w') as fp:
+        for item in optimal_policies:
+            # Write each item on a new line
+            fp.write(f"\n{str(item)}")
+
+    # Save Q_VALUES_list for player1 (learning over time) to .npy file
+    np.save(destination_folder / "Q_VALUES_player1_list.npy", q_values_player_1, allow_pickle=True)
+
+    # Save Q_VALUES_list for each player (learning over time) to txt file
+    with open(destination_folder / "Q_VALUES_player1_list.txt", 'w') as fp:
+        for item in q_values_player_1:
+            fp.write(f"\n{str(item)}")
+
+    # Save Q_VALUES_list for player2 if available - if player2 is a QL player
+    if q_values_player_2:
+        np.save(destination_folder / "Q_VALUES_player2_list.npy", q_values_player_2, allow_pickle=True)
+
+        with open(destination_folder / "Q_VALUES_player2_list.txt", 'w') as fp:
+            for item in q_values_player_2:
+                fp.write(f"\n{str(item)}")
+    else:
+        logger.info("Player 2 is not a QL player, no Q Values to save.")
+    logger.info("Done storing all available learning data.")
+
+
+def run_one_episode_mixed(config: GameConfig, counter: int, destination_folder: Path, game: Game, num_iter: int,
+                           random_numbers_stream: RandomNumberGenerator) -> tuple[DataFrame, np.ndarray, np.ndarray]:
+    """Run one mixed episode with a learning player and record learning outputs.
+
+    Parameters
+    ----------
+    config : GameConfig
+        Resolved experiment configuration containing the learning-rate,
+        discount-factor, and exploration settings used during Q-value updates.
+    counter : int
+        One-based run index used when initializing learning parameters and
+        deciding whether to persist the Q-learning configuration file.
+    destination_folder : Path
+        Experiment output folder used for initialization side effects such as
+        storing the Q-learning parameter snapshot on the first run.
+    game : Game
+        Configured game environment. The function uses its players, state-index
+        converter, and :meth:`mixed_step` method to advance the episode and
+        append step-level diagnostics to the shared history dataframe.
+    num_iter : int
+        Number of interactions to execute in the episode.
+    random_numbers_stream : RandomNumberGenerator
+        Reproducible random-number streams used for state initialization and
+        any stochastic choices inside the environment dynamics.
+
+    Returns
+    -------
+    tuple[DataFrame, np.ndarray, np.ndarray]
+        Three-element tuple containing the episode history dataframe, the
+        learned greedy policy per state for player 1, and the sequence of
+        player-1 Q-table snapshots collected over training.
+
+    Notes
+    -----
+    Player 1 is treated as the learning agent. Its Q-table is reset to zeros at
+    the start of the episode, updated online after each call to
+    :meth:`game.mixed_step <uu.ai.thesis.core.environment.game.Game.mixed_step>`,
+    and copied into the returned history array before every iteration.
+    """
+    global_history = pd.DataFrame.from_dict({'state_player1': [None], 'action_player1': [None],
+                                             'state_player2': [None], 'action_player2': [None],
+                                             'reward_game_player1': [None], 'next_state_player1': [None],
+                                             'reward_game_player2': [None], 'next_state_player2': [None],
+                                             'reward_intrinsic_player1': [None], 'reward_intrinsic_player2': [None],
+                                             # NB reward_intrinsic_player2 will remian empty
+                                             'reward_collective': [None], 'reward_ratio': [None], 'reward_gini': [None],
+                                             'reward_min': [None],
+                                             'reward_learning_player1': [None], 'reward_learning_player2': [None],
+                                             'eps_player1': [None], 'reason_player1': [None], 'RNs_player1': [None]})
+
+    player_1 = game.player1
+
+    player_1.q_values = np.zeros((4, 2))
+    state_index_converter = game.state_index_converter
+
+    # Store myVars to allow the code to refer to a previously defined variable name - used to look up Q-value table for each agent
+    state_player1, state_player2 = reset_learning_parameters(game_config=config, counter=counter,
+                                                             destination_folder=destination_folder,
+                                                             random_numbers_stream=random_numbers_stream)
+    history_q_values_player_1 = []
+
+    for iteration in range(num_iter):  # e.g. num_iter - e.g. encounters
+        history_q_values_player_1.append(player_1.q_values.copy())
+
+        # Execute a step that interacts with the environment & updates global_history behind the scenes
+        action_player1, next_state_player1, next_state_player2, reward_learning_player1 = game.mixed_step(state_player1,
+                                                                                                          state_player2,
+                                                                                                          iteration,
+                                                                                                          global_history,
+                                                                                                          num_iter, random_numbers_stream)
+
+        state_index_player1 = state_index_converter[state_player1]
+
+        next_state_index_player1 = state_index_converter[next_state_player1]
+
+        alpha = config.alpha_theta / (1 + iteration * config.decay)
+
+        next_value_player1 = np.max(player_1.q_values[next_state_index_player1])  # Greedy policy at the next step
+        # NOTE the above will choose C,C when all cells are 0 --> will need to wait until random exploration to try D instead of C...
+        player_1.q_values[state_index_player1, action_player1] *= 1 - alpha  # TO DO change this to state_index
+        player_1.q_values[state_index_player1, action_player1] += alpha * (
+                    reward_learning_player1 + config.gamma * next_value_player1)
+        state_player1 = next_state_player1
+
+        state_player2 = next_state_player2
+
+    history_q_values_player_1 = np.array(history_q_values_player_1)
+
+    result = np.zeros(4)  # np.argmax(player_1.q_values, axis=1)
+    for state in range(len(result)):
+        if not np.any(player_1.q_values[state]):  # if empty
+            result[state] = None
+        else:
+            result[state] = np.argmax(player_1.q_values[state])  # , axis=1
+
+    return global_history, result, history_q_values_player_1
+
+
 def run_one_episode_static(destination_folder: Path, game: Game, num_iter: int,
-                           random_numbers_stream: RandomNumberGenerator):
+                           random_numbers_stream: RandomNumberGenerator) -> DataFrame:
+    """Run one static-strategy episode and collect the recorded interaction history.
+
+    Parameters
+    ----------
+    destination_folder : Path
+        Experiment output folder. Its name is inspected to detect whether the
+        second player uses TFT, in which case the initial state for player 2 is
+        forced to cooperation-compatible ``(0, 0)``.
+    game : Game
+        Configured game environment used to execute each static interaction
+        step. Its :meth:`static_step` method appends step-level data to the
+        shared history dataframe and returns the next states for both players.
+    num_iter : int
+        Number of iterations to execute in the episode.
+    random_numbers_stream : RandomNumberGenerator
+        Reproducible random-number streams used to sample the initial states
+        and any stochastic choices inside the game dynamics.
+
+    Returns
+    -------
+    DataFrame
+        Episode history containing the recorded states, actions, and reward
+        signals accumulated across all iterations.
+
+    Notes
+    -----
+    The returned dataframe is initialized with a placeholder first row of
+    ``None`` values before the episode loop begins. During the loop,
+    :meth:`game.static_step <uu.ai.thesis.core.environment.game.Game.static_step>`
+    mutates this dataframe in place while the local player states are updated
+    from the returned next-state tuples.
+    """
     global_history = pd.DataFrame.from_dict({"state_player1": [None], "action_player1": [None],
                                              "state_player2": [None], "action_player2": [None],
                                              "reward_game_player1": [None], "next_state_player1": [None],

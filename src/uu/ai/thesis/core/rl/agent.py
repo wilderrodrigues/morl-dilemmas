@@ -1,8 +1,13 @@
 # MIT License - 2026
+"""Agent abstractions for fixed and exploratory IPD players.
+
+This module defines the player wrapper used by the experiments to hold
+strategy-specific configuration, Q-values for learning agents, and action
+selection helpers for both exploratory and fixed-strategy settings.
+"""
 from uu.ai.thesis.core.policy.exploration import ExplorationPolicy, EpsilonGreedy
 from uu.ai.thesis.core.rl.types import Strategy
 import numpy.typing as npt
-import numpy as np
 
 
 class Player:
@@ -41,11 +46,11 @@ class Player:
         # Will only be used for QLVE_m agent
         self.mixed_beta = mixed_beta
 
-        self.q_values: npt.NDArray[np.float32] | None = None
+        self.q_values: npt.NDArray | None = None
 
     def make_exploratory_move(self, state: int, iteration: int, num_iter: int,
-                              random_numbers: npt.NDArray[np.float32]) -> tuple[
-        int, float, str, npt.NDArray[np.float32]]:
+                              random_numbers: npt.NDArray) -> tuple[
+        int, float, str, npt.NDArray]:
         """Select an action using epsilon-greedy exploration.
 
         Parameters

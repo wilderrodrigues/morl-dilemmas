@@ -1,8 +1,12 @@
 # MIT License - 2026
+"""Utility helpers for deterministic random-number stream generation.
+
+This module currently provides a small wrapper around NumPy seed sequences to
+create reproducible player-specific random-number generators for experiments.
+"""
 from pathlib import Path
 
 from numpy.random import SeedSequence, default_rng
-import os
 
 from uu import logger
 
@@ -14,6 +18,16 @@ class RandomNumberGenerator:
     ----------
     master_seed : int
         Root seed used to derive reproducible player-specific generators.
+    n_players : int, optional
+        Number of players for which independent random-number stream groups are
+        created.
+    n_children : int, optional
+        Number of child generators spawned for each player.
+
+    Attributes
+    ----------
+    player_streams : list[list]
+        Nested list of NumPy random-number generators grouped by player.
     """
 
     def __init__(self, master_seed: int, n_players: int = 2, n_children: int = 5) -> None:
@@ -56,15 +70,15 @@ class RandomNumberGenerator:
         child_seeds = seed_seq.spawn(self.n_players)
 
         if not destination_folder.is_dir():
-            raise ValueError('destination folder is not a directory.')
+            raise ValueError("Destination folder is not a directory.")
 
         if not destination_folder.exists():
             destination_folder.mkdir(parents=True, exist_ok=True)
 
-        with open(f"{os.fspath(destination_folder)}/child_seeds.txt", "w") as fp:
+        with open(destination_folder / "child_seeds.txt", "w") as fp:
             for item in child_seeds:
                 fp.write(f"{str(item)}\n")
-            logger.info(f"child seeds generated in {destination_folder} for players 1 and 2.")
+            logger.info(f"Child seeds generated in {destination_folder} for players 1 and 2.")
 
         for player in range(self.n_players):
             grandchildren_player = child_seeds[player].spawn(self.n_children)

@@ -1,4 +1,10 @@
 # MIT License - 2026
+"""Game environments and reward models for iterative social dilemmas.
+
+This module defines reward helpers, the abstract game interface, and concrete
+or placeholder iterative dilemma environments used by the thesis experiments.
+It centralizes step logic for learning, mixed, and fixed-strategy matchups.
+"""
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -312,8 +318,30 @@ class Game(ABC):
     def mixed_step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int,
                    global_history: DataFrame,
                    num_iter: int, random_numbers_stream: RandomNumberGenerator) -> tuple[
-        int, int, int, int, float, float]:
-        """Execute one step with one learning player and one fixed player."""
+        int, tuple[int, int], tuple[int, int], int | None]:
+        """Execute one step with one learning player and one fixed player.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by the learning player.
+        state_p2 : tuple[int, int]
+            Current state perceived by the fixed player.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics are recorded.
+        num_iter : int
+            Total number of training iterations.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams used for stochastic action selection.
+
+        Returns
+        -------
+        tuple[int, tuple[int, int], tuple[int, int], int | None]
+            Learning player's selected action, next states for both players,
+            and the reward signal used for learning.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -321,7 +349,27 @@ class Game(ABC):
                     global_history: DataFrame,
                     random_numbers_stream: RandomNumberGenerator) -> tuple[
         tuple[int, int], tuple[int, int]]:
-        """Execute one step with two fixed-strategy players."""
+        """Execute one step with two fixed-strategy players.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by player 1.
+        state_p2 : tuple[int, int]
+            Current state perceived by player 2.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics are recorded.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams used by stochastic fixed strategies.
+
+        Returns
+        -------
+        tuple[tuple[int, int], tuple[int, int]]
+            Next states for player 1 and player 2 after the fixed-strategy
+            interaction.
+        """
         raise NotImplementedError
 
 
@@ -605,20 +653,94 @@ class IterativeVolunteersDilemma(Game):
     def step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int, global_history: DataFrame,
              num_iter: int, random_numbers_stream: RandomNumberGenerator) -> tuple[
         int, int, tuple[int, int], tuple[int, int], int | None, int | None]:
-        """Execute one learning step for the volunteer's dilemma."""
+        """Execute one learning step for the volunteer's dilemma.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by player 1.
+        state_p2 : tuple[int, int]
+            Current state perceived by player 2.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics would be recorded.
+        num_iter : int
+            Total number of training iterations.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams intended for stochastic action selection.
+
+        Returns
+        -------
+        tuple[int, int, tuple[int, int], tuple[int, int], int | None, int | None]
+            Selected actions, next states, and learning rewards for both
+            players.
+
+        Notes
+        -----
+        This method is currently a placeholder and has not been implemented.
+        """
         pass
 
     def mixed_step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int,
                    global_history: DataFrame,
                    num_iter: int, random_numbers_stream: RandomNumberGenerator) -> tuple[
         int, int, int, int, float, float]:
-        """Execute one mixed-strategy step for the volunteer's dilemma."""
+        """Execute one mixed-strategy step for the volunteer's dilemma.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by the learning player.
+        state_p2 : tuple[int, int]
+            Current state perceived by the fixed player.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics would be recorded.
+        num_iter : int
+            Total number of training iterations.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams intended for stochastic action selection.
+
+        Returns
+        -------
+        tuple[int, int, int, int, float, float]
+            Placeholder return signature for action, state, and reward values.
+
+        Notes
+        -----
+        This method is currently a placeholder and has not been implemented.
+        """
         pass
 
     def static_step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int,
                     global_history: DataFrame,
                     random_numbers_stream: RandomNumberGenerator) -> tuple[int, int, int, int, float, float]:
-        """Execute one fixed-strategy step for the volunteer's dilemma."""
+        """Execute one fixed-strategy step for the volunteer's dilemma.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by player 1.
+        state_p2 : tuple[int, int]
+            Current state perceived by player 2.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics would be recorded.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams intended for stochastic fixed strategies.
+
+        Returns
+        -------
+        tuple[int, int, int, int, float, float]
+            Placeholder return signature for action, state, and reward values.
+
+        Notes
+        -----
+        This method is currently a placeholder and has not been implemented.
+        """
         pass
 
 
@@ -628,18 +750,92 @@ class IterativeStagHuntDilemma(Game):
     def step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int, global_history: DataFrame,
              num_iter: int, random_numbers_stream: RandomNumberGenerator) -> tuple[
         int, int, tuple[int, int], tuple[int, int], int | None, int | None]:
-        """Execute one learning step for the stag hunt dilemma."""
+        """Execute one learning step for the stag hunt dilemma.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by player 1.
+        state_p2 : tuple[int, int]
+            Current state perceived by player 2.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics would be recorded.
+        num_iter : int
+            Total number of training iterations.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams intended for stochastic action selection.
+
+        Returns
+        -------
+        tuple[int, int, tuple[int, int], tuple[int, int], int | None, int | None]
+            Selected actions, next states, and learning rewards for both
+            players.
+
+        Notes
+        -----
+        This method is currently a placeholder and has not been implemented.
+        """
         pass
 
     def mixed_step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int,
                    global_history: DataFrame,
                    num_iter: int, random_numbers_stream: RandomNumberGenerator) -> tuple[
         int, int, int, int, float, float]:
-        """Execute one mixed-strategy step for the stag hunt dilemma."""
+        """Execute one mixed-strategy step for the stag hunt dilemma.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by the learning player.
+        state_p2 : tuple[int, int]
+            Current state perceived by the fixed player.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics would be recorded.
+        num_iter : int
+            Total number of training iterations.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams intended for stochastic action selection.
+
+        Returns
+        -------
+        tuple[int, int, int, int, float, float]
+            Placeholder return signature for action, state, and reward values.
+
+        Notes
+        -----
+        This method is currently a placeholder and has not been implemented.
+        """
         pass
 
     def static_step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int,
                     global_history: DataFrame,
                     random_numbers_stream: RandomNumberGenerator) -> tuple[int, int, int, int, float, float]:
-        """Execute one fixed-strategy step for the stag hunt dilemma."""
+        """Execute one fixed-strategy step for the stag hunt dilemma.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by player 1.
+        state_p2 : tuple[int, int]
+            Current state perceived by player 2.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics would be recorded.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams intended for stochastic fixed strategies.
+
+        Returns
+        -------
+        tuple[int, int, int, int, float, float]
+            Placeholder return signature for action, state, and reward values.
+
+        Notes
+        -----
+        This method is currently a placeholder and has not been implemented.
+        """
         pass
