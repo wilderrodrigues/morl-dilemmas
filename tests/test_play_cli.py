@@ -20,7 +20,7 @@ runner = CliRunner()
 
 def test_build_ipd_config_uses_defaults_without_suffixes() -> None:
     """Build the default configuration without adding optional suffixes."""
-    config = build_game_config(title1="QLS", title2="AD")
+    config = build_game_config(game_type="ipd", title1="QLS", title2="AD")
 
     assert config.destination_folder == "QLS_AD"
     assert config.master_seed == 1
@@ -39,6 +39,8 @@ def test_ipd_cli_prints_resolved_configuration() -> None:
     result = runner.invoke(
         app,
         [
+            "--game-type",
+            "ipd",
             "--title1",
             "QLUT",
             "--title2",
@@ -69,6 +71,7 @@ def test_ipd_cli_prints_resolved_configuration() -> None:
 
     payload = json.loads(result.stdout)
     assert payload == {
+        "game_type": "ipd",
         "alpha_theta": 0.02,
         "decay": 0.001,
         "destination_folder": "QLUT_AD_seed7_iter250_runs5_pilot_eps_theta0.1_eps_decay_alpha_theta0.02_decay0.001_gamma0.95_beta0.25",
