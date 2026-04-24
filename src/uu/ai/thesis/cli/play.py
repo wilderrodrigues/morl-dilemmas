@@ -68,7 +68,7 @@ def run_static(config: GameConfig) -> None:
     if 'QL' in title1 or 'QL' in title2:
         raise ValueError("This is not the right function for these player types!")
 
-    results_path = Path("results") / destination_folder
+    results_path = Path("results") / config.game_type / destination_folder
     results_path.mkdir(parents=True, exist_ok=True)
 
     strategy_p1 = Strategy[title1]
@@ -137,7 +137,7 @@ def run_qlearning_vs_static(config: GameConfig) -> None:
     if 'QL' not in title1:
         raise ValueError("This is not the right function for these player types!")
 
-    results_path = Path("results") / destination_folder
+    results_path = Path("results") / config.game_type / destination_folder
     results_path.mkdir(parents=True, exist_ok=True)
 
     strategy_p1 = Strategy[title1]
@@ -218,7 +218,7 @@ def run_qlearning_vs_qlearning(config: GameConfig) -> None:
     if 'QL' not in title1 or 'QL' not in title2:
         raise ValueError("This is not the right function for these player types!")
 
-    results_path = Path("results") / destination_folder
+    results_path = Path("results") / config.game_type / destination_folder
     results_path.mkdir(parents=True, exist_ok=True)
 
     strategy_p1 = Strategy[title1]
