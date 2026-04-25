@@ -33,7 +33,7 @@ class Strategy(Enum):
     QLDE = ("Q-Learning eps-greedy", Morality.DEONTOLOGICAL)
     QLVE_e = ("Q-Learning eps-greedy", Morality.VIRTUE_ETHICS_EQUALITY)
     QLVE_k = ("Q-Learning eps-greedy", Morality.VIRTUE_ETHICS_KINDNESS)
-    QLVE_m = ("Q-Learning eps-greedy", Morality.VIRTUE_ETHICS_MIXED)
+    QLVM = ("Q-Learning eps-greedy", Morality.VIRTUE_ETHICS_MIXED)
 
     @staticmethod
     def get_strategy(strategy: str) -> "Strategy":
