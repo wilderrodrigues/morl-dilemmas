@@ -81,6 +81,15 @@ to run all IPD experiments, execute the following command:
 ./run_ipd.sh
 ```
 
+## Plotting results
+
+To plot the results for the experiments, please make use of the `compute` CLI. To generate the plots for the IPD experient,
+for example, run the following command:
+
+```shell
+poetry run python -m uu.ai.thesis.cli.compute --game-type ipd --num-runs 100
+```
+
 There are other two scripts available for the Iterative Stag Hunt and Iterative Volunteer's Dilemma experiments. Those can
 be found under the root directory of the repository as well.
 
