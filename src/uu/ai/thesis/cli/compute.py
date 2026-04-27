@@ -42,19 +42,52 @@ def clear_previous_runs(results_path: Path) -> None:
             os.rename(results_path / dirname, results_path / dirname.replace('_eps_theta1.0_eps_decay', ''))
 
 
-def plot_results_for_pair(results_path: Path, game_type: str, num_runs: int) -> None:
-    """Generate the standard plot suite for predefined strategy pairings.
+def plot_games_results(destination_folder: Path, player1_title: str, player2_title: str, num_runs: int,
+                       game_type: str) -> None:
+    """Generate the full plot suite for one stored matchup.
+
+    Parameters
+    ----------
+    destination_folder : Path
+        Experiment directory containing the aggregated CSV outputs for one
+        player pairing.
+    player1_title : str
+        Human-readable title for player 1 used across the generated plots.
+    player2_title : str
+        Human-readable title for player 2 used across the generated plots.
+    num_runs : int
+        Number of runs represented in the stored result files.
+    game_type : str
+        Short game identifier used when titling result plots.
+    """
+    plot_action_pairs(destination_folder=destination_folder, player1_title=player1_title,
+                      player2_title=player2_title, n_runs=num_runs)
+    plot_results(destination_folder=destination_folder, player1_title=player1_title, player2_title=player2_title,
+                 n_runs=num_runs, game_title=game_type.upper())
+    plot_actions(destination_folder=destination_folder, player1_title=player1_title, player2_title=player2_title,
+                 n_runs=num_runs)
+    plot_action_types_area(destination_folder=destination_folder, player1_title=player1_title,
+                           player2_title=player2_title, n_runs=num_runs)
+    plot_first_n_actions(destination_folder=destination_folder, player1_title=player1_title,
+                         player2_title=player2_title, n_runs=num_runs)
+    visualise_first_n_actions_matrix(destination_folder=destination_folder)
+    plot_last_n_actions(destination_folder=destination_folder, player1_title=player1_title,
+                        player2_title=player2_title, n_runs=num_runs)
+    visualise_last_n_actions_matrix(destination_folder=destination_folder)
+
+
+def setup_path_for_pairs(results_path: Path, game_type: str, num_runs: int) -> None:
+    """Generate plots for the predefined baseline strategy pairings.
 
     Parameters
     ----------
     results_path : Path
-        Root directory containing one subdirectory per evaluated strategy
+        Root results directory containing one subdirectory per evaluated
         pairing.
     game_type : str
-        Short game identifier used when titling result plots, such as
-        ``"ipd"``, ``"ivd"``, or ``"ish"``.
+        Short game identifier used when titling the generated plots.
     num_runs : int
-        Number of runs represented in the stored result files for each pairing.
+        Number of runs represented in each stored result bundle.
     """
     ql_static_opponents = ['QLS_QLS', 'QLUT_QLS', 'QLDE_QLS', 'QLVE_e_QLS', 'QLVE_k_QLS']
     ext_moral_opponents = ['QLUT_QLUT', 'QLDE_QLUT', 'QLDE_QLDE', 'QLVE_e_QLUT']
@@ -73,28 +106,54 @@ def plot_results_for_pair(results_path: Path, game_type: str, num_runs: int) -> 
     pairs_index = 2
     for destination_folder in all_learners_paths:
         path_to_split = os.fspath(destination_folder)
-        if "QLVE" not in path_to_split.split('/')[pairs_index]:
-            short_titles = path_to_split.split('/')[pairs_index].split('_')[0:2]
+        if "QLVE" not in path_to_split.split("/")[pairs_index]:
+            short_titles = path_to_split.split("/")[pairs_index].split("_")[0:2]
         else:
             # Manually split the 'QLVE_' types
-            short_titles = path_to_split.split('/')[2][0:6], path_to_split.split('/')[pairs_index][7:]
+            short_titles = path_to_split.split("/")[2][0:6], path_to_split.split("/")[pairs_index][7:]
         long_titles = [title_mapping[title] for title in short_titles]
-        logger.info(f"plotting results for: {long_titles} for games under the '{destination_folder}' folder.")
+        logger.info(f"plotting pair results for: {long_titles} for games under the '{destination_folder}' folder.")
 
-        plot_action_pairs(destination_folder=destination_folder, player1_title=long_titles[0],
-                          player2_title=long_titles[1], n_runs=num_runs)
-        plot_results(destination_folder=destination_folder, player1_title=long_titles[0], player2_title=long_titles[1],
-                     n_runs=num_runs, game_title=game_type.upper())
-        plot_actions(destination_folder=destination_folder, player1_title=long_titles[0], player2_title=long_titles[1],
-                     n_runs=num_runs)
-        plot_action_types_area(destination_folder=destination_folder, player1_title=short_titles[0],
-                               player2_title=short_titles[1], n_runs=num_runs)
-        plot_first_n_actions(destination_folder=destination_folder, player1_title=short_titles[0],
-                             player2_title=short_titles[1], n_runs=num_runs)
-        visualise_first_n_actions_matrix(destination_folder=destination_folder)
-        plot_last_n_actions(destination_folder=destination_folder, player1_title=short_titles[0],
-                            player2_title=short_titles[1], n_runs=num_runs)
-        visualise_last_n_actions_matrix(destination_folder=destination_folder)
+        plot_games_results(destination_folder=destination_folder, player1_title=long_titles[0],
+                           player2_title=long_titles[1],
+                           num_runs=num_runs, game_type=game_type)
+
+
+def setup_path_for_mixed_players(results_path: Path, game_type: str, num_runs: int) -> None:
+    """Generate plots for matchups involving mixed virtue-learning players.
+
+    Parameters
+    ----------
+    results_path : Path
+        Root results directory containing one subdirectory per evaluated
+        pairing.
+    game_type : str
+        Short game identifier used when titling the generated plots.
+    num_runs : int
+        Number of runs represented in each stored result bundle.
+    """
+    ql_virtue_mixed_opponents = ["QLVM_QLS", "QLVM_QLUT", "QLVM_QLDE", "QLVM_QLVE_e", "QLVM_QLVE_k", "QLVM_QLVM"]
+    ql_static_opponents = ["QLVM_AC", "QLVM_AD", "QLVM_TFT", "QLVM_Random"]
+
+    ql_virtue_mixed_opponents_path = [results_path / games_pair for games_pair in ql_virtue_mixed_opponents]
+    ql_static_opponents_path = [results_path / games_pair for games_pair in ql_static_opponents]
+
+    all_learners_path = ql_virtue_mixed_opponents_path + ql_static_opponents_path
+
+    for destination_folder in all_learners_path:
+        path_to_split = os.fspath(destination_folder)
+        if "QLVE" not in path_to_split.split("/")[2]:
+            short_titles = path_to_split.split("/")[2].split("_")[0:2]
+        else:
+            # Manually split the 'QLVE_' types
+            short_titles = path_to_split.split("/")[2][0:4], path_to_split.split("/")[2][5:]
+        long_titles = [title_mapping[title] for title in short_titles]
+        logger.info(f"plotting mixed players results for: {long_titles} for games under "
+                    f"the '{destination_folder}' folder.")
+
+        plot_games_results(destination_folder=destination_folder, player1_title=long_titles[0],
+                           player2_title=long_titles[1],
+                           num_runs=num_runs, game_type=game_type)
 
 
 @app.command()
@@ -115,7 +174,8 @@ def main(
     results_path = Path("results") / game_type
     clear_previous_runs(results_path)
 
-    plot_results_for_pair(results_path=results_path, game_type=game_type, num_runs=num_runs)
+    setup_path_for_pairs(results_path=results_path, game_type=game_type, num_runs=num_runs)
+    setup_path_for_mixed_players(results_path=results_path, game_type=game_type, num_runs=num_runs)
 
 
 if __name__ == "__main__":
