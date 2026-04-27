@@ -27,7 +27,7 @@ def color_condition(map_value: str) -> str:
     str
         CSS style fragment specifying the background color for the given label.
     """
-    # ToDO [Wilder]: This function must be refactored into a more elegant solution.
+    # TODO [Wilder]: This function must be refactored into a more elegant solution.
     color = "#000000"
     if map_value == "C | (C, C)":
         color = "#28641E"
