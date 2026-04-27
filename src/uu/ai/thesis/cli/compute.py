@@ -12,6 +12,7 @@ from typing import Annotated
 import typer
 
 from uu import logger
+from uu.ai.thesis.plot.action_matrices import plot_matrix_action_pairs
 from uu.ai.thesis.plot.pair_results import plot_results, plot_actions, plot_action_types_area, plot_first_n_actions, \
     visualise_first_n_actions_matrix, plot_last_n_actions, visualise_last_n_actions_matrix, plot_action_pairs
 
@@ -176,6 +177,7 @@ def main(
 
     setup_path_for_pairs(results_path=results_path, game_type=game_type, num_runs=num_runs)
     setup_path_for_mixed_players(results_path=results_path, game_type=game_type, num_runs=num_runs)
+    plot_matrix_action_pairs(destination_path=results_path, num_runs=num_runs)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 # MIT License - 2026
+"""Enumerations describing agent strategies and moral reward models."""
 from enum import Enum
 
 

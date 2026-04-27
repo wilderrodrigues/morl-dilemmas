@@ -1,4 +1,5 @@
 # MIT License - 2026
+"""Configuration models and default values for game experiments."""
 from dataclasses import dataclass
 
 

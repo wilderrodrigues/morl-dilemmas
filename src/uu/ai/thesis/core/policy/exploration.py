@@ -1,4 +1,5 @@
 # MIT License - 2026
+"""Exploration-policy abstractions for learning agents."""
 from abc import ABC, abstractmethod
 
 import numpy as np
