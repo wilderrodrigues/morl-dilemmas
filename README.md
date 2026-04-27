@@ -72,6 +72,18 @@ To get a quick experiment running, run the following command:
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLS --title2 AC --eps-theta 1.0 --eps-decay
 ```
 
+## Running the Experiments
+
+To run the experiments, use one of the `bash` scripts provided in the root directory of the repository. For example, 
+to run all IPD experiments, execute the following command:
+
+```shell
+./run_ipd.sh
+```
+
+There are other two scripts available for the Iterative Stag Hunt and Iterative Volunteer's Dilemma experiments. Those can
+be found under the root directory of the repository as well.
+
 ## Author
 
 1. Wilder Rodrigues

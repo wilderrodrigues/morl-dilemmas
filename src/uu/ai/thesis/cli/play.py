@@ -21,8 +21,8 @@ from uu.ai.thesis.core.environment.game import IterativePrisonersDilemma
 from uu.ai.thesis.core.functions import RandomNumberGenerator
 from uu.ai.thesis.core.rl.types import Strategy
 
-app = typer.Typer(add_completion=False, help="Configure IPD experiment parameters.")
-
+app = typer.Typer(add_completion=False, help="Plays iterative matches with 2 players and different learning algorithms "
+                                             "given a game type and a set of parameters.")
 
 def run_static(config: GameConfig) -> None:
     """Run a static-strategy IPD experiment and persist per-run results.

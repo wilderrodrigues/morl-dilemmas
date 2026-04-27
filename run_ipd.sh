@@ -8,7 +8,7 @@ poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --tit
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLDE --eps-theta 1.0 --eps-decay --num-iterations 20000
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVE_e --eps-theta 1.0 --eps-decay --num-iterations 20000
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVE_k --eps-theta 1.0 --eps-decay --num-iterations 20000
-poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVE_m --eps-theta 1.0 --eps-decay --num-iterations 20000
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVM --eps-theta 1.0 --eps-decay --num-iterations 20000
 
 # Run part 1 - QLS vs all other learners, some moral vs moral - DONE ON 3
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLS --title2 QLS --eps-theta 1.0 --eps-decay
