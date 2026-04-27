@@ -104,6 +104,10 @@ be found under the root directory of the repository as well.
 
 ## Citations
 
+Most of the work in the repository was originally implemented by Elizaveta _et al_. I have refactored the main features
+out into the core package, where I abstracted the environment, agent, and policy components. The execution of the experiments
+has been moved into a command line interface (CLI), fully parametrised for easy use.
+
 ```bibtex
 @INPROCEEDINGS{Tennant-ijcai2023p36,
   title     = {Modeling Moral Choices in Social Dilemmas with Multi-Agent Reinforcement Learning},
