@@ -17,7 +17,7 @@ from uu.ai.thesis.cli import payoff_matrices
 from uu.ai.thesis.cli.setup.match import create_pair_of_players, store_raw_data, save_history, run_one_episode_static, \
     run_one_episode_mixed, store_learning_data, run_one_episode
 from uu.ai.thesis.core.data.model import build_game_config, GameConfig
-from uu.ai.thesis.core.environment.game import IterativePrisonersDilemma
+from uu.ai.thesis.core.environment.game import IterativeSingleObjectiveGame
 from uu.ai.thesis.core.functions import RandomNumberGenerator
 from uu.ai.thesis.core.rl.types import Strategy
 
@@ -83,7 +83,7 @@ def run_static(config: GameConfig) -> None:
     counter = 0
     for player1, player2 in pairs_of_players:
         counter += 1
-        game = IterativePrisonersDilemma(player1, player2, payoff_matrices[config.game_type])
+        game = IterativeSingleObjectiveGame(player1, player2, payoff_matrices[config.game_type])
         global_history = run_one_episode_static(destination_folder=results_path, game=game,
                                                 num_iter=num_iterations, random_numbers_stream=rng)
         save_history(history=global_history, run_idx=counter, destination_folder=results_path)
@@ -154,7 +154,7 @@ def run_qlearning_vs_static(config: GameConfig) -> None:
     counter = 0
     for player1, player2 in pairs_of_players:
         counter += 1
-        game = IterativePrisonersDilemma(player1, player2, payoff_matrices[config.game_type])
+        game = IterativeSingleObjectiveGame(player1, player2, payoff_matrices[config.game_type])
         global_history, result, history_q_values_player1 = run_one_episode_mixed(config=config, counter=counter,
                                                                                  destination_folder=results_path,
                                                                                  game=game, num_iter=num_iterations,
@@ -236,7 +236,7 @@ def run_qlearning_vs_qlearning(config: GameConfig) -> None:
     counter = 0
     for player1, player2 in pairs_of_players:
         counter += 1
-        game = IterativePrisonersDilemma(player1, player2, payoff_matrices[config.game_type])
+        game = IterativeSingleObjectiveGame(player1, player2, payoff_matrices[config.game_type])
         global_history, result, history_q_values_player1, history_q_values_player2 = run_one_episode(config=config,
                                                                                                    counter=counter,
                                                                                                    destination_folder=results_path,

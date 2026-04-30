@@ -547,7 +547,7 @@ def run_one_episode(config: GameConfig, counter: int, destination_folder: Path, 
         history_q_values_player_1.append(player_1.q_values.copy())
         history_q_values_player_2.append(player_2.q_values.copy())
 
-        # execute a step that interacts with the environment & updates global_history behind the scenes
+        # Execute a step that interacts with the environment & updates global_history behind the scenes
         action_player1, action_player2, next_state_player1, next_state_player2, reward_learning_player1, reward_learning_player2 = game.step(
             state_player1, state_player2, iteration, global_history, num_iter, random_numbers_stream)
 
