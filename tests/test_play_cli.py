@@ -23,6 +23,10 @@ def test_build_ipd_config_uses_defaults_without_suffixes() -> None:
     config = build_game_config(game_type="ipd", title1="QLS", title2="AD")
 
     assert config.destination_folder == "QLS_AD"
+    assert config.morl is False
+    assert config.num_states == 4
+    assert config.num_actions == 2
+    assert config.num_objectives is None
     assert config.master_seed == 1
     assert config.num_iterations == 10_000
     assert config.num_runs == 100
@@ -32,6 +36,7 @@ def test_build_ipd_config_uses_defaults_without_suffixes() -> None:
     assert config.decay == 0.0
     assert config.gamma == 0.9
     assert config.mixed_beta == 0.5
+    assert config.phi == 0.5
 
 
 def test_ipd_cli_prints_resolved_configuration() -> None:
@@ -60,7 +65,7 @@ def test_ipd_cli_prints_resolved_configuration() -> None:
             "0.001",
             "--gamma",
             "0.95",
-            "--beta",
+            "--phi",
             "0.25",
             "--extra",
             "pilot",
@@ -74,15 +79,20 @@ def test_ipd_cli_prints_resolved_configuration() -> None:
         "game_type": "ipd",
         "alpha_theta": 0.02,
         "decay": 0.001,
-        "destination_folder": "QLUT_AD_seed7_iter250_runs5_pilot_eps_theta0.1_eps_decay_alpha_theta0.02_decay0.001_gamma0.95_beta0.25",
+        "destination_folder": "QLUT_AD_seed7_iter250_runs5_pilot_eps_theta0.1_eps_decay_alpha_theta0.02_decay0.001_gamma0.95_phi0.25",
         "eps_theta": 0.1,
         "eps_decay": True,
         "extra": "pilot",
         "gamma": 0.95,
         "master_seed": 7,
-        "mixed_beta": 0.25,
+        "morl": False,
+        "mixed_beta": 0.5,
+        "phi": 0.25,
+        "num_actions": 2,
         "num_iterations": 250,
+        "num_objectives": 2,
         "num_runs": 5,
+        "num_states": 4,
         "title1": "QLUT",
         "title2": "AD",
     }

@@ -17,12 +17,36 @@ from uu.ai.thesis.cli import payoff_matrices
 from uu.ai.thesis.cli.setup.match import create_pair_of_players, store_raw_data, save_history, run_one_episode_static, \
     run_one_episode_mixed, store_learning_data, run_one_episode
 from uu.ai.thesis.core.data.model import build_game_config, GameConfig
-from uu.ai.thesis.core.environment.game import IterativeSingleObjectiveGame
+from uu.ai.thesis.core.environment.game import Game, IterativeMultiObjectiveGame, IterativeSingleObjectiveGame
 from uu.ai.thesis.core.functions import RandomNumberGenerator
+from uu.ai.thesis.core.rl.agent import Player
 from uu.ai.thesis.core.rl.types import Strategy
 
 app = typer.Typer(add_completion=False, help="Plays iterative matches with 2 players and different learning algorithms "
                                              "given a game type and a set of parameters.")
+
+
+def create_game(config: GameConfig, player1: Player, player2: Player) -> Game:
+    """Create the concrete game environment for an experiment.
+
+    Parameters
+    ----------
+    config : GameConfig
+        Resolved experiment configuration. The ``morl`` flag determines whether
+        the game returns scalar learning rewards or vector-valued MORL rewards.
+    player1 : Player
+        First player in the game.
+    player2 : Player
+        Second player in the game.
+
+    Returns
+    -------
+    Game
+        Configured single-objective or multi-objective iterative game.
+    """
+    game_class = IterativeMultiObjectiveGame if config.morl else IterativeSingleObjectiveGame
+    return game_class(player1, player2, payoff_matrices[config.game_type])
+
 
 def run_static(config: GameConfig) -> None:
     """Run a static-strategy IPD experiment and persist per-run results.
@@ -83,7 +107,7 @@ def run_static(config: GameConfig) -> None:
     counter = 0
     for player1, player2 in pairs_of_players:
         counter += 1
-        game = IterativeSingleObjectiveGame(player1, player2, payoff_matrices[config.game_type])
+        game = create_game(config, player1, player2)
         global_history = run_one_episode_static(destination_folder=results_path, game=game,
                                                 num_iter=num_iterations, random_numbers_stream=rng)
         save_history(history=global_history, run_idx=counter, destination_folder=results_path)
@@ -154,7 +178,7 @@ def run_qlearning_vs_static(config: GameConfig) -> None:
     counter = 0
     for player1, player2 in pairs_of_players:
         counter += 1
-        game = IterativeSingleObjectiveGame(player1, player2, payoff_matrices[config.game_type])
+        game = create_game(config, player1, player2)
         global_history, result, history_q_values_player1 = run_one_episode_mixed(config=config, counter=counter,
                                                                                  destination_folder=results_path,
                                                                                  game=game, num_iter=num_iterations,
@@ -236,7 +260,7 @@ def run_qlearning_vs_qlearning(config: GameConfig) -> None:
     counter = 0
     for player1, player2 in pairs_of_players:
         counter += 1
-        game = IterativeSingleObjectiveGame(player1, player2, payoff_matrices[config.game_type])
+        game = create_game(config, player1, player2)
         global_history, result, history_q_values_player1, history_q_values_player2 = run_one_episode(config=config,
                                                                                                    counter=counter,
                                                                                                    destination_folder=results_path,
@@ -262,6 +286,10 @@ def main(
         title1: Annotated[str, typer.Option(help="Short title for player 1.")],
         title2: Annotated[str, typer.Option(help="Short title for player 2.")],
         game_type: Annotated[str, typer.Option(help="Game to run, e.g. 'ipd', 'ish', 'ivd'.")] = "ipd",
+        morl: Annotated[bool, typer.Option(help="Enable Multi Object Reinforcement Learning.")] = False,
+        num_states: Annotated[int, typer.Option(help="Number of states in the game.")] = 4,
+        num_actions: Annotated[int, typer.Option(help="Number of actions available to each player.")] = 2,
+        num_objectives: Annotated[int, typer.Option(help="Number of objectives available to each player.")] = 2,
         master_seed: Annotated[int | None, typer.Option(help="Master seed for reproducible random streams.")] = None,
         num_iterations: Annotated[int | None, typer.Option(help="Iterations per run.")] = None,
         num_runs: Annotated[int | None, typer.Option(help="Number of runs with different seeds.")] = None,
@@ -271,6 +299,7 @@ def main(
         decay: Annotated[float | None, typer.Option(help="Learning-rate decay for Q-learning.")] = None,
         gamma: Annotated[float | None, typer.Option(help="Discount factor for Q-learning.")] = None,
         beta: Annotated[float | None, typer.Option(help="Relative weighting for mixed virtue rewards.")] = None,
+        phi: Annotated[float | None, typer.Option(help="Curvature parameter for non-linear moral utility.")] = None,
         extra: Annotated[str | None, typer.Option(help="Extra label to append to the destination folder.")] = None,
 ) -> None:
     """Print the resolved IPD configuration as JSON.
@@ -283,6 +312,14 @@ def main(
         Short title identifying player 1.
     title2 : str
         Short title identifying player 2.
+    morl : bool
+        If True, the game is configured for Multi Objective Reinforcement Learning.
+    num_states : int
+        The number of states in the game.
+    num_actions : int
+        The number of actions available to each player.
+    num_objectives : int
+        The number of objectives available to each player.
     master_seed : int | None, optional
         Root seed used to initialize reproducible random number streams.
     num_iterations : int | None, optional
@@ -301,6 +338,8 @@ def main(
         Discount factor used in temporal-difference updates.
     beta : float | None, optional
         Weighting coefficient for mixed virtue-ethics rewards.
+    phi : float | None, optional
+        Curvature parameter for the non-linear moral utility component.
     extra : str | None, optional
         Optional extra label appended to the destination folder name.
     """
@@ -308,6 +347,10 @@ def main(
         game_type=game_type,
         title1=title1,
         title2=title2,
+        morl=morl,
+        num_states=num_states,
+        num_actions=num_actions,
+        num_objectives=num_objectives,
         master_seed=master_seed,
         num_iterations=num_iterations,
         num_runs=num_runs,
@@ -317,6 +360,7 @@ def main(
         decay=decay,
         gamma=gamma,
         beta=beta,
+        phi=phi,
         extra=extra,
     )
     typer.echo(json.dumps(asdict(config), indent=2, sort_keys=True))

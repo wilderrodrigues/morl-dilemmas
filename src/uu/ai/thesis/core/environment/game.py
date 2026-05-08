@@ -287,7 +287,11 @@ class Game(ABC):
 
     @abstractmethod
     def step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int, global_history: DataFrame,
-             num_iter: int, random_numbers_stream: RandomNumberGenerator) -> tuple[
+             num_iter: int, random_numbers_stream: RandomNumberGenerator,
+             accumulated_return_p1: np.ndarray | None = None,
+             accumulated_return_p2: np.ndarray | None = None,
+             discount_power: float = 1.0
+    ) -> tuple[
         int, int, tuple[int, int], tuple[int, int], int | None, int | None]:
         """Execute one step with two learning players.
 
@@ -398,7 +402,11 @@ class IterativeSingleObjectiveGame(Game):
         self.minimum_reward = MinimumReward(payoff_matrix=payoff_matrix)
 
     def step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int, global_history: DataFrame,
-             num_iter: int, random_numbers_stream: RandomNumberGenerator) -> tuple[
+             num_iter: int, random_numbers_stream: RandomNumberGenerator,
+             accumulated_return_p1: np.ndarray | None = None,
+             accumulated_return_p2: np.ndarray | None = None,
+             discount_power: float = 1.0
+             ) -> tuple[
         int, int, tuple[int, int], tuple[int, int], int | None, int | None]:
         """Execute one step with two exploratory learning players.
 
@@ -466,11 +474,11 @@ class IterativeSingleObjectiveGame(Game):
 
         # append values to the history dataframe - used for plotting later
         global_history.loc[iteration, ['state_player1', 'action_player1', 'state_player2', 'action_player2']] = [
-            state_p1, action_player1, state_p2, action_player2]
+            str(state_p1), action_player1, str(state_p2), action_player2]
 
         global_history.loc[
             iteration, ['reward_game_player1', 'next_state_player1', 'reward_game_player2', 'next_state_player2']] = [
-            reward_game_player1, next_state_player1, reward_game_player2, next_state_player2]
+            reward_game_player1, str(next_state_player1), reward_game_player2, str(next_state_player2)]
 
         global_history.loc[
             iteration, ['reward_intrinsic_player1', 'reward_intrinsic_player2', 'reward_collective', 'reward_ratio',
@@ -563,11 +571,11 @@ class IterativeSingleObjectiveGame(Game):
 
         # append values to the history dataframe - used for plotting later
         global_history.loc[iteration, ['state_player1', 'action_player1', 'state_player2', 'action_player2']] = [
-            state_p1, action_player1, state_p2, action_player2]
+            str(state_p1), action_player1, str(state_p2), action_player2]
 
         global_history.loc[
             iteration, ['reward_game_player1', 'next_state_player1', 'reward_game_player2', 'next_state_player2']] = [
-            reward_game_player1, next_state_player1, reward_game_player2, next_state_player2]
+            reward_game_player1, str(next_state_player1), reward_game_player2, str(next_state_player2)]
 
         global_history.loc[iteration, ['reward_intrinsic_player1', 'reward_collective', 'reward_ratio', 'reward_gini',
                                        'reward_min']] = [
@@ -610,6 +618,360 @@ class IterativeSingleObjectiveGame(Game):
         tuple[tuple[int, int], tuple[int, int]]
             Next states for player 1 and player 2.
         """
+        # Generate 2 * 4 random numbers, then use whichever is needed. Generate all of them to make sure we go through the RN list consistently
+        # RN_1 to RN_3 not used by player1 or player2
+        player1_rn_4 = random_numbers_stream.player_streams[Game.PLAYER_1][3].uniform(0,
+                                                                                      1)  # move for a static agent with strategy==’random’
+        player2_rn_4 = random_numbers_stream.player_streams[Game.PLAYER_2][3].uniform(0,
+                                                                                      1)  # move for a static agent with strategy==’random’
+
+        action_player1 = self.player1.make_fixed_move(state=state_p1, player_rn_spawn_4=player1_rn_4)
+        action_player2 = self.player2.make_fixed_move(state=state_p2, player_rn_spawn_4=player2_rn_4)
+
+        # Save the key information as next_state for each agent #NOTE we record state with opponent's move first, then own movement
+        next_state_player1 = (action_player2, action_player1)
+        next_state_player2 = (action_player1, action_player2)
+
+        # Calculate reward - extrinsic (from the game scores), collective
+        reward_game_player1 = self.extrinsic_reward.reward(action_p1=action_player1, action_p2=action_player2)[0]
+        reward_game_player2 = self.extrinsic_reward.reward(action_p1=action_player2, action_p2=action_player1)[0]
+
+        reward_collective = self.utilitarian_reward.reward(action_p1=action_player1, action_p2=action_player2)
+        reward_ratio = self.virtue_reward.reward(action_p1=action_player1, action_p2=action_player2)
+        reward_gini = self.gini_reward.reward(action_p1=action_player1, action_p2=action_player2)
+        reward_min = self.minimum_reward.reward(action_p1=action_player1, action_p2=action_player2)
+
+        # Append values to the history dataframe - used for plotting later
+        global_history.loc[iteration, ['state_player1', 'action_player1', 'state_player2', 'action_player2']] = [
+            str(state_p1), action_player1, str(state_p2), action_player2]
+
+        global_history.loc[
+            iteration, ['reward_game_player1', 'next_state_player1', 'reward_game_player2', 'next_state_player2']] = [
+            reward_game_player1, str(next_state_player1), reward_game_player2, str(next_state_player2)]
+
+        global_history.loc[iteration, ['reward_collective', 'reward_ratio', 'reward_gini', 'reward_min']] = [
+            reward_collective, reward_ratio, reward_gini, reward_min]
+
+        return next_state_player1, next_state_player2
+
+
+class IterativeMultiObjectiveGame(Game):
+    """Iterative dilemma game that returns vector-valued learning rewards.
+
+    The environment records the same diagnostic reward columns as the
+    single-objective game, but the learning reward is represented as a
+    two-objective vector with objective order ``[moral, individual]``. Q-learning
+    code can then update vector-valued Q-tables and use SER scalarisation only
+    when choosing actions.
+    """
+
+    def __init__(self, player1: Player, player2: Player, payoff_matrix: list[list[tuple[int, int]]]) -> None:
+        """Initialize reward calculators for the multi-objective dilemma game.
+
+        Parameters
+        ----------
+        player1 : Player
+            First player in the game.
+        player2 : Player
+            Second player in the game.
+        payoff_matrix : list[list[tuple[int, int]]]
+            Payoff matrix indexed by the actions of player 1 and player 2.
+        """
+        super().__init__(player1=player1, player2=player2, payoff_matrix=payoff_matrix)
+        self.extrinsic_reward = ExtrinsicReward(payoff_matrix=payoff_matrix)
+        self.intrinsic_reward_p1 = IntrinsicReward(payoff_matrix=payoff_matrix, player=player1)
+        self.intrinsic_reward_p2 = IntrinsicReward(payoff_matrix=payoff_matrix, player=player2)
+        self.utilitarian_reward = UtilitarianReward(payoff_matrix=payoff_matrix)
+        self.virtue_reward = VirtueReward(payoff_matrix=payoff_matrix)
+        self.gini_reward = GiniReward(payoff_matrix=payoff_matrix)
+        self.minimum_reward = MinimumReward(payoff_matrix=payoff_matrix)
+
+    @staticmethod
+    def reward_vector(individual_reward: float, moral_reward: float | None) -> dict[
+        str, float]:
+        """Create the MORL learning reward vector.
+
+        Parameters
+        ----------
+        individual_reward : float
+            Extrinsic game payoff assigned to the player.
+        moral_reward : float | None
+            Intrinsic or moral reward assigned to the player. ``None`` is
+            converted to zero so selfish agents still receive a complete vector.
+
+        Returns
+        -------
+        dict[str, float]
+            Reward vector with keys ``"moral"`` and ``"individual"``.
+        """
+        return {
+            "moral": 0.0 if moral_reward is None else float(moral_reward),
+            "individual": float(individual_reward),
+        }
+
+    def step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int, global_history: DataFrame,
+             num_iter: int, random_numbers_stream: RandomNumberGenerator,
+             accumulated_return_p1: np.ndarray | None = None,
+             accumulated_return_p2: np.ndarray | None = None,
+             discount_power: float = 1.0) -> tuple[
+        int, int, tuple[int, int], tuple[int, int], dict[str, float], dict[str, float]]:
+        """Execute one MORL step with two exploratory learning players.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by player 1.
+        state_p2 : tuple[int, int]
+            Current state perceived by player 2.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics are recorded.
+        num_iter : int
+            Total number of training iterations.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams used for exploratory action selection.
+        accumulated_return_p1 : np.ndarray | None, optional
+            Discounted vector return accumulated by player 1 so far in the
+            episode.
+        accumulated_return_p2 : np.ndarray | None, optional
+            Discounted vector return accumulated by player 2 so far in the
+            episode.
+        discount_power : float, optional
+            Discount factor power applied to vector Q-values during SER action
+            selection.
+
+        Returns
+        -------
+        tuple[int, int, tuple[int, int], tuple[int, int], dict[str, float], dict[str, float]]
+            Selected actions, next states, and vector learning rewards for both
+            players.
+        """
+
+        # Generate 2 * 4 random numbers, then use whichever is needed. Generate all of them to make sure we go through the RN list consistently
+        player1_rn_1 = random_numbers_stream.player_streams[Game.PLAYER_1][0].uniform(0,
+                                                                                      1)  # Random move when Q-table is empty
+        player2_rn_1 = random_numbers_stream.player_streams[Game.PLAYER_2][0].uniform(0,
+                                                                                      1)  # Random move when Q-table is empty
+        player1_rn_2 = random_numbers_stream.player_streams[Game.PLAYER_1][1].uniform(0,
+                                                                                      1)  # Probability to compare against eps
+        player2_rn_2 = random_numbers_stream.player_streams[Game.PLAYER_2][1].uniform(0,
+                                                                                      1)  # Probability to compare against eps
+        player1_rn_3 = random_numbers_stream.player_streams[Game.PLAYER_1][2].uniform(0, 1)  # Random move due to eps
+        player2_rn_3 = random_numbers_stream.player_streams[Game.PLAYER_2][2].uniform(0, 1)  # Random move due to eps
+        # There is also a 4th random number, used to generate move for a static agent with strategy==’random’, and a
+        # 5th random number - used to generate the initial state within the main script
+
+        state_index_player1 = self.state_index_converter[state_p1]
+        state_index_player2 = self.state_index_converter[state_p2]
+
+        action_player1, eps_player1, reason_player1, rns_player1 = self.player1.make_exploratory_move(
+            state=state_index_player1, iteration=iteration, num_iter=num_iter,
+            random_numbers=np.array([player1_rn_1, player1_rn_2, player1_rn_3], dtype=object),
+            accumulated_return=accumulated_return_p1,
+            discount_power=discount_power)
+        action_player2, eps_player2, reason_player2, rns_player2 = self.player2.make_exploratory_move(
+            state=state_index_player2, iteration=iteration, num_iter=num_iter,
+            random_numbers=np.array([player2_rn_1, player2_rn_2, player2_rn_3], dtype=object),
+            accumulated_return=accumulated_return_p2,
+            discount_power=discount_power)
+
+        # Save the key information as next_state for each agent - of shape (action_opponent, action_own)
+        next_state_player1 = (action_player2, action_player1)
+        next_state_player2 = (action_player1, action_player2)
+
+        # Calculate reward - extrinsic (from the game scores), intrinsic (based on moral rule of the player), collective
+        reward_game_player1 = self.extrinsic_reward.reward(action_p1=action_player1, action_p2=action_player2)[0]
+        reward_game_player2 = self.extrinsic_reward.reward(action_p1=action_player2, action_p2=action_player1)[0]
+
+        self.intrinsic_reward_p1.update_state(state=state_p1)
+        reward_intrinsic_player1 = self.intrinsic_reward_p1.reward(action_p1=action_player1, action_p2=action_player2)
+        self.intrinsic_reward_p2.update_state(state=state_p2)
+        reward_intrinsic_player2 = self.intrinsic_reward_p2.reward(action_p1=action_player2, action_p2=action_player1)
+
+        reward_collective = self.utilitarian_reward.reward(action_p1=action_player1, action_p2=action_player2)
+        reward_ratio = self.virtue_reward.reward(action_p1=action_player1, action_p2=action_player2)
+        reward_gini = self.gini_reward.reward(action_p1=action_player1, action_p2=action_player2)
+        reward_min = self.minimum_reward.reward(action_p1=action_player1, action_p2=action_player2)
+
+        # append values to the history dataframe - used for plotting later
+        global_history.loc[iteration, ['state_player1', 'action_player1', 'state_player2', 'action_player2']] = [
+            str(state_p1), action_player1, str(state_p2), action_player2]
+
+        global_history.loc[
+            iteration, ['reward_game_player1', 'next_state_player1', 'reward_game_player2', 'next_state_player2']] = [
+            reward_game_player1, str(next_state_player1), reward_game_player2, str(next_state_player2)]
+
+        global_history.loc[
+            iteration, ['reward_intrinsic_player1', 'reward_intrinsic_player2', 'reward_collective', 'reward_ratio',
+                        'reward_gini', 'reward_min']] = [
+            reward_intrinsic_player1, reward_intrinsic_player2, reward_collective, reward_ratio, reward_gini,
+            reward_min]
+
+        global_history.loc[iteration, ['eps_player1', 'eps_player2', 'reason_player1', 'reason_player2']] = [
+            eps_player1, eps_player2, reason_player1, reason_player2]
+
+        global_history.loc[iteration, ['RNs_player1', 'RNs_player2']] = [
+            str(rns_player1), str(rns_player2)]
+
+        reward_learning_player1 = self.reward_vector(
+            individual_reward=reward_game_player1,
+            moral_reward=reward_intrinsic_player1,
+        )
+        reward_learning_player2 = self.reward_vector(
+            individual_reward=reward_game_player2,
+            moral_reward=reward_intrinsic_player2,
+        )
+
+        global_history.loc[iteration, ['reward_learning_player1', 'reward_learning_player2']] = [
+            str(reward_learning_player1), str(reward_learning_player2)]
+
+        global_history.loc[
+            iteration,
+            [
+                'reward_vector_moral_player1', 'reward_vector_individual_player1',
+                'reward_vector_moral_player2', 'reward_vector_individual_player2',
+                'reward_scalarised_player1', 'reward_scalarised_player2'
+            ]
+        ] = [
+            reward_learning_player1["moral"], reward_learning_player1["individual"],
+            reward_learning_player2["moral"], reward_learning_player2["individual"],
+            self.player1.scalarise_reward(reward_learning_player1),
+            self.player2.scalarise_reward(reward_learning_player2),
+        ]
+        return int(action_player1), int(
+            action_player2), next_state_player1, next_state_player2, reward_learning_player1, reward_learning_player2
+
+    def mixed_step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int,
+                   global_history: DataFrame, num_iter: int, random_numbers_stream: RandomNumberGenerator,
+                   accumulated_return_p1: np.ndarray | None = None,
+                   discount_power: float = 1.0) -> tuple[
+        int, tuple[int, int], tuple[int, int], dict[str, float]]:
+        """Execute one MORL step with one learning player and one fixed player.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by the learning player.
+        state_p2 : tuple[int, int]
+            Current state perceived by the fixed player.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics are recorded.
+        num_iter : int
+            Total number of training iterations.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams used for action selection.
+        accumulated_return_p1 : np.ndarray | None, optional
+            Discounted vector return accumulated by the learning player so far
+            in the episode.
+        discount_power : float, optional
+            Discount factor power applied to vector Q-values during SER action
+            selection.
+
+        Returns
+        -------
+        tuple[int, tuple[int, int], tuple[int, int], dict[str, float]]
+            Learning player's action, next states for both players, and the
+            vector learning reward for player 1.
+        """
+
+        # Generate 2 * 4 random numbers, then use whichever is needed. Generate all of them to make sure we go through the RN list consistently
+        # Only using some of the RNs generated, since one of the players is static
+        player1_rn_1 = random_numbers_stream.player_streams[Game.PLAYER_1][0].uniform(0,
+                                                                                      1)  # Random move when Q-table is empty
+        player1_rn_2 = random_numbers_stream.player_streams[Game.PLAYER_1][1].uniform(0,
+                                                                                      1)  # Probability to compare against eps
+        player1_rn_3 = random_numbers_stream.player_streams[Game.PLAYER_1][2].uniform(0, 1)  # Random move due to eps
+        player2_rn_4 = random_numbers_stream.player_streams[Game.PLAYER_2][3].uniform(0,
+                                                                                      1)  # Move for a static agent with strategy==’random’
+
+        state_index_player1 = self.state_index_converter[state_p1]
+
+        action_player1, eps_player1, reason_player1, rns_player1 = self.player1.make_exploratory_move(
+            state=state_index_player1, iteration=iteration, num_iter=num_iter,
+            random_numbers=np.array([player1_rn_1, player1_rn_2, player1_rn_3]),
+            accumulated_return=accumulated_return_p1,
+            discount_power=discount_power)
+        action_player2 = self.player2.make_fixed_move(state=state_p2, player_rn_spawn_4=player2_rn_4)
+
+        # Save the key information as next_state for each agent
+        # Note we record state with opponent's move first, then own movement
+        next_state_player1 = (action_player2, action_player1)
+        next_state_player2 = (action_player1, action_player2)  # Note this does not really get used as player2 is static
+
+        # calculate reward - extrinsic (from the game scores), intrinsic (based on moral rule of the player), collective
+        reward_game_player1 = self.extrinsic_reward.reward(action_p1=action_player1, action_p2=action_player2)[0]
+        reward_game_player2 = self.extrinsic_reward.reward(action_p1=action_player2, action_p2=action_player1)[0]
+
+        self.intrinsic_reward_p1.update_state(state=state_p1)
+        reward_intrinsic_player1 = self.intrinsic_reward_p1.reward(action_p1=action_player1, action_p2=action_player2)
+
+        reward_collective = self.utilitarian_reward.reward(action_p1=action_player1, action_p2=action_player2)
+        reward_ratio = self.virtue_reward.reward(action_p1=action_player1, action_p2=action_player2)
+        reward_gini = self.gini_reward.reward(action_p1=action_player1, action_p2=action_player2)
+        reward_min = self.minimum_reward.reward(action_p1=action_player1, action_p2=action_player2)
+
+        # append values to the history dataframe - used for plotting later
+        global_history.loc[iteration, ['state_player1', 'action_player1', 'state_player2', 'action_player2']] = [
+            str(state_p1), action_player1, str(state_p2), action_player2]
+
+        global_history.loc[
+            iteration, ['reward_game_player1', 'next_state_player1', 'reward_game_player2', 'next_state_player2']] = [
+            reward_game_player1, str(next_state_player1), reward_game_player2, str(next_state_player2)]
+
+        global_history.loc[iteration, ['reward_intrinsic_player1', 'reward_collective', 'reward_ratio', 'reward_gini',
+                                       'reward_min']] = [
+            reward_intrinsic_player1, reward_collective, reward_ratio, reward_gini, reward_min]
+
+        global_history.loc[iteration, ['eps_player1', 'reason_player1', 'RNs_player1']] = [
+            eps_player1, reason_player1, str(rns_player1)]
+        # Note if we do not use str() here, this throws and error about creating np array from ragged nested sequences - ignore for now
+
+        reward_learning_player1 = self.reward_vector(
+            individual_reward=reward_game_player1,
+            moral_reward=reward_intrinsic_player1,
+        )
+
+        global_history.loc[iteration, ['reward_learning_player1']] = [str(reward_learning_player1)]
+        global_history.loc[
+            iteration,
+            [
+                'reward_vector_moral_player1', 'reward_vector_individual_player1',
+                'reward_scalarised_player1'
+            ]
+        ] = [
+            reward_learning_player1["moral"], reward_learning_player1["individual"],
+            self.player1.scalarise_reward(reward_learning_player1),
+        ]
+
+        return int(action_player1), next_state_player1, next_state_player2, reward_learning_player1
+
+    def static_step(self, state_p1: tuple[int, int], state_p2: tuple[int, int], iteration: int,
+                    global_history: DataFrame, random_numbers_stream: RandomNumberGenerator) -> tuple[
+        tuple[int, int], tuple[int, int]]:
+        """Execute one fixed-strategy step in the multi-objective environment.
+
+        Parameters
+        ----------
+        state_p1 : tuple[int, int]
+            Current state perceived by player 1.
+        state_p2 : tuple[int, int]
+            Current state perceived by player 2.
+        iteration : int
+            Current iteration index.
+        global_history : DataFrame
+            DataFrame where step-level diagnostics are recorded.
+        random_numbers_stream : RandomNumberGenerator
+            Random number streams used by random fixed strategies.
+
+        Returns
+        -------
+        tuple[tuple[int, int], tuple[int, int]]
+            Next states for player 1 and player 2.
+        """
+
         # Generate 2 * 4 random numbers, then use whichever is needed. Generate all of them to make sure we go through the RN list consistently
         # RN_1 to RN_3 not used by player1 or player2
         player1_rn_4 = random_numbers_stream.player_streams[Game.PLAYER_1][3].uniform(0,

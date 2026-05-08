@@ -113,7 +113,7 @@ def plot_action_pairs(destination_folder: Path, player1_title: str, player2_titl
         # If plotting main action_pairs_results
         pair = os.fspath(destination_folder).split("/")[2]
     else:
-        # If plotting extra parameter-search for beta in QLVM
+        # If plotting extra parameter-search for phi in QLVM
         pair = destination_folder
 
     plt.savefig(actions_results_path / f"pairs_{pair}.pdf", bbox_inches="tight")

@@ -11,6 +11,8 @@ DEFAULT_ALPHA_THETA = 0.01
 DEFAULT_DECAY = 0.0
 DEFAULT_GAMMA = 0.9
 DEFAULT_BETA = 0.5
+DEFAULT_PHI = 0.5
+DEFAULT_NUM_OBJECTIVES = 2
 
 
 @dataclass(frozen=True)
@@ -25,6 +27,14 @@ class GameConfig:
         Short title identifying player 1.
     title2 : str
         Short title identifying player 2.
+    morl : bool
+        If True, the game is configured for Multi Objective Reinforcement Learning.
+    num_states : int
+        Number of states in the game.
+    num_actions : int
+        Number of actions available to each player.
+    num_objectives : int | None
+        Number of objectives to be maximized by the game.
     destination_folder : str
         Output folder name derived from the selected experiment parameters.
     master_seed : int
@@ -45,6 +55,8 @@ class GameConfig:
         Discount factor used in temporal-difference updates.
     mixed_beta : float
         Weighting coefficient for mixed virtue-ethics rewards.
+    phi : float
+        Curvature parameter for the non-linear moral utility component.
     extra : str | None, optional
         Optional extra label appended to the destination folder name.
     """
@@ -52,6 +64,10 @@ class GameConfig:
     game_type: str
     title1: str
     title2: str
+    morl: bool
+    num_states: int
+    num_actions: int
+    num_objectives: int | None
     destination_folder: str
     master_seed: int
     num_iterations: int
@@ -62,6 +78,7 @@ class GameConfig:
     decay: float
     gamma: float
     mixed_beta: float
+    phi: float
     extra: str | None = None
 
 
@@ -69,6 +86,10 @@ def build_game_config(
     game_type: str,
     title1: str,
     title2: str,
+    morl: bool = False,
+    num_states: int = 4,
+    num_actions: int = 2,
+    num_objectives: int | None = None,
     master_seed: int | None = None,
     num_iterations: int | None = None,
     num_runs: int | None = None,
@@ -78,6 +99,7 @@ def build_game_config(
     decay: float | None = None,
     gamma: float | None = None,
     beta: float | None = None,
+    phi: float | None = None,
     extra: str | None = None,
 ) -> GameConfig:
     """Build a resolved game configuration and destination folder name.
@@ -90,6 +112,14 @@ def build_game_config(
         Short title identifying player 1.
     title2 : str
         Short title identifying player 2.
+    morl : bool
+        If True, the game is configured for Multi Objective Reinforcement Learning. Default is False.
+    num_states : int
+        Number of states in the game.
+    num_actions : int
+        Number of actions available to each player.
+    num_objectives : int | None
+        Number of objectives to be maximized by the game.
     master_seed : int | None, optional
         Root seed used to initialize reproducible random number streams. If
         omitted, :data:`DEFAULT_MASTER_SEED` is used.
@@ -115,6 +145,9 @@ def build_game_config(
     beta : float | None, optional
         Weighting coefficient for mixed virtue-ethics rewards. If omitted,
         :data:`DEFAULT_BETA` is used.
+    phi : float | None, optional
+        Curvature parameter for the non-linear moral utility component. If
+        omitted, :data:`DEFAULT_PHI` is used.
     extra : str | None, optional
         Optional extra label appended to the destination folder name.
 
@@ -132,9 +165,13 @@ def build_game_config(
     resolved_decay = DEFAULT_DECAY if decay is None else decay
     resolved_gamma = DEFAULT_GAMMA if gamma is None else gamma
     resolved_beta = DEFAULT_BETA if beta is None else beta
+    resolved_phi = DEFAULT_PHI if phi is None else phi
+    resolved_num_objectives = DEFAULT_NUM_OBJECTIVES if morl and num_objectives is None else num_objectives
 
     destination_folder = f"{title1}_{title2}"
 
+    if morl:
+        destination_folder += "_MORL"
     if master_seed is not None:
         destination_folder += f"_seed{resolved_master_seed}"
     if num_iterations is not None:
@@ -155,11 +192,17 @@ def build_game_config(
         destination_folder += f"_gamma{resolved_gamma}"
     if beta is not None:
         destination_folder += f"_beta{resolved_beta}"
+    if phi is not None:
+        destination_folder += f"_phi{resolved_phi}"
 
     return GameConfig(
         game_type=game_type,
         title1=title1,
         title2=title2,
+        morl=morl,
+        num_states=num_states,
+        num_actions=num_actions,
+        num_objectives=resolved_num_objectives,
         destination_folder=destination_folder,
         master_seed=resolved_master_seed,
         num_iterations=resolved_num_iterations,
@@ -170,5 +213,6 @@ def build_game_config(
         decay=resolved_decay,
         gamma=resolved_gamma,
         mixed_beta=resolved_beta,
+        phi=resolved_phi,
         extra=extra,
     )
