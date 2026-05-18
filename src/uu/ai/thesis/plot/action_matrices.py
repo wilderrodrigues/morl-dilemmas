@@ -11,7 +11,7 @@ import seaborn as sns
 from uu import logger
 
 
-def plot_matrix_action_pairs(destination_path: Path, num_runs: int) -> None:
+def plot_matrix_action_pairs(destination_path: Path, num_runs: int, morl: bool) -> None:
     """Plot heatmaps summarizing final action-pair frequencies across matchups.
 
     Parameters
@@ -21,6 +21,8 @@ def plot_matrix_action_pairs(destination_path: Path, num_runs: int) -> None:
         the target output directory for the generated heatmaps.
     num_runs : int
         Number of runs represented in each stored ``action_pairs.csv`` file.
+    morl : bool
+        Whether the experiment was conducted using the Morl framework.
     """
     # NOTE: This will only work for 10.000 iterations right now, not fewer!
     # NOTE: We plot after iteration 0 as then the agent is reacting to a default initial state, not a move from the opponent
@@ -34,57 +36,58 @@ def plot_matrix_action_pairs(destination_path: Path, num_runs: int) -> None:
     matrix_CD = pd.DataFrame(columns=types, index=types)  # shape = vs S,UT,DE,Ve,Vk(,VEm)
 
     for player1_title in ["QLS", "QLUT", "QLDE", "QLVE_e", "QLVE_k", "QLVM"]:
-        if not (destination_path / f"{player1_title}_QLS" / "action_pairs.csv").exists():
-            continue
-
-        action_pairs_against_QLS = \
-            pd.read_csv(destination_path / f"{player1_title}_QLS" / "action_pairs.csv", index_col=0).iloc[9999]
+        full_path = destination_path / f"{player1_title}_QLS_MORL" / "action_pairs.csv" \
+            if morl else destination_path / f"{player1_title}_QLS" / "action_pairs.csv"
+        action_pairs_against_QLS = pd.read_csv(full_path, index_col=0).iloc[9999]
         try:
-            action_pairs_against_QLUT = \
-                pd.read_csv(destination_path / f"{player1_title}_QLUT" / "action_pairs.csv", index_col=0).iloc[
-                    9999]
+            full_path = destination_path / f"{player1_title}_QLUT_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"{player1_title}_QLUT" / "action_pairs.csv"
+            action_pairs_against_QLUT = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLUT = ""
         except:
-            action_pairs_against_QLUT = \
-                pd.read_csv(destination_path / f"QLUT_{player1_title}" / "action_pairs.csv", index_col=0).iloc[
-                    9999]
+            full_path = destination_path / f"QLUT_{player1_title}_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"QLUT_{player1_title}" / "action_pairs.csv"
+            action_pairs_against_QLUT = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLUT = "QLUT_first"
         try:
-            action_pairs_against_QLDE = \
-                pd.read_csv(destination_path / f"{player1_title}_QLDE" / "action_pairs.csv", index_col=0).iloc[
-                    9999]
+            full_path = destination_path / f"{player1_title}_QLDE_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"{player1_title}_QLDE" / "action_pairs.csv"
+            action_pairs_against_QLDE = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLDE = ""
         except:
-            action_pairs_against_QLDE = \
-                pd.read_csv(destination_path / f"QLDE_{player1_title}" / "action_pairs.csv", index_col=0).iloc[
-                    9999]
+            full_path = destination_path / f"QLDE_{player1_title}_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"QLDE_{player1_title}" / "action_pairs.csv"
+            action_pairs_against_QLDE = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLDE = "QLDE_first"
         try:
-            action_pairs_against_QLVE_e = \
-                pd.read_csv(destination_path / f"{player1_title}_QLVE_e" / "action_pairs.csv", index_col=0).iloc[9999]
+            full_path = destination_path / f"{player1_title}_QLVE_e_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"{player1_title}_QLVE_e" / "action_pairs.csv"
+            action_pairs_against_QLVE_e = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLVE_e = ""
         except:
-            action_pairs_against_QLVE_e = \
-                pd.read_csv(destination_path / f"QLVE_e_{player1_title}" / "action_pairs.csv", index_col=0).iloc[
-                    9999]
+            full_path = destination_path / f"QLVE_e_{player1_title}_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"QLVE_e_{player1_title}" / "action_pairs.csv"
+            action_pairs_against_QLVE_e = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLVE_e = "QLVE_e_first"
         try:
-            action_pairs_against_QLVE_k = \
-                pd.read_csv(destination_path / f"{player1_title}_QLVE_k" / "action_pairs.csv", index_col=0).iloc[9999]
+            full_path = destination_path / f"{player1_title}_QLVE_k_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"{player1_title}_QLVE_k" / "action_pairs.csv"
+            action_pairs_against_QLVE_k = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLVE_k = ""
         except:
-            action_pairs_against_QLVE_k = \
-                pd.read_csv(destination_path / f"QLVE_k_{player1_title}" / "action_pairs.csv", index_col=0).iloc[9999]
+            full_path = destination_path / f"QLVE_k_{player1_title}_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"QLVE_k_{player1_title}" / "action_pairs.csv"
+            action_pairs_against_QLVE_k = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLVE_k = "QLVE_k_first"
         try:
-            action_pairs_against_QLVM = \
-                pd.read_csv(destination_path / f"{player1_title}_QLVM" / "action_pairs.csv", index_col=0).iloc[
-                    9999]
+            full_path = destination_path / f"{player1_title}_QLVM_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"{player1_title}_QLVM" / "action_pairs.csv"
+            action_pairs_against_QLVM = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLVM = ""
         except:
-            action_pairs_against_QLVM = \
-                pd.read_csv(destination_path / f"QLVM_{player1_title}" / "action_pairs.csv", index_col=0).iloc[
-                    9999]
+            full_path = destination_path / f"QLVM_{player1_title}_MORL" / "action_pairs.csv" \
+                if morl else destination_path / f"QLVM_{player1_title}" / "action_pairs.csv"
+            action_pairs_against_QLVM = pd.read_csv(full_path, index_col=0).iloc[9999]
             order_QLVM = "QLVM_first"
 
         logger.info(

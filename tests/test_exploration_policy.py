@@ -67,3 +67,118 @@ def test_use_policy_with_epsilon_greedy_returns_greedy_action() -> None:
     )
 
     assert result == (1, 0.15, "greedy, according to learnt Q-values")
+
+
+def test_plot():
+    import matplotlib.pyplot as plt
+
+    # ==========================================
+    # Data
+    # x = Dot-counting performance
+    # y = Tracking performance
+    # ==========================================
+
+    young_x = [0, 67, 82, 92, 100]
+    young_y = [100, 91, 87, 75, 0]
+
+    old_x = [0, 77, 87, 91, 100]
+    old_y = [100, 80, 70, 59, 0]
+
+    # Dual-task labels
+    labels = ["DT-ETR", "DT-NE", "DT-EDC"]
+
+    # ==========================================
+    # Plot
+    # ==========================================
+
+    plt.figure(figsize=(9, 9))
+
+    # POC curves
+    plt.plot(
+        young_x,
+        young_y,
+        marker="D",
+        linewidth=2,
+        color="tab:blue",
+        label="Young adults"
+    )
+
+    plt.plot(
+        old_x,
+        old_y,
+        marker="s",
+        linewidth=2,
+        color="tab:red",
+        label="Old adults"
+    )
+
+    # ==========================================
+    # Annotate CoC
+    # ==========================================
+
+    # Young adults
+    for x, y, label in zip(young_x[1:-1], young_y[1:-1], labels):
+        coc_dc = 100 - x
+        coc_tr = 100 - y
+
+        # helper lines
+        plt.plot([x, x], [y, 100], "--", color="tab:blue", alpha=0.4)
+        plt.plot([x, 100], [y, y], "--", color="tab:blue", alpha=0.4)
+
+        # point label
+        plt.text(x + 1, y + 1, label, fontsize=9)
+
+        # CoC annotation
+        plt.text(
+            x + 2,
+            y - 6,
+            f"CoC DC={coc_dc}\nCoC TR={coc_tr}",
+            fontsize=9,
+            color="tab:blue"
+        )
+
+    # Old adults
+    for x, y, label in zip(old_x[1:-1], old_y[1:-1], labels):
+        coc_dc = 100 - x
+        coc_tr = 100 - y
+
+        # helper lines
+        plt.plot([x, x], [y, 100], "--", color="tab:red", alpha=0.4)
+        plt.plot([x, 100], [y, y], "--", color="tab:red", alpha=0.4)
+
+        # point label
+        plt.text(x + 1, y - 4, label, fontsize=9)
+
+        # CoC annotation
+        plt.text(
+            x - 18,
+            y - 10,
+            f"CoC DC={coc_dc}\nCoC TR={coc_tr}",
+            fontsize=9,
+            color="tab:red"
+        )
+
+    # ==========================================
+    # Axes and style
+    # ==========================================
+
+    plt.xlabel("Dot-Counting Task (%)", fontsize=12)
+    plt.ylabel("Tracking Task (%)", fontsize=12)
+
+    plt.title(
+        "Performance Operating Characteristic (POC) Curve",
+        fontsize=14
+    )
+
+    plt.xlim(0, 105)
+    plt.ylim(0, 105)
+
+    plt.xticks(range(0, 101, 10))
+    plt.yticks(range(0, 101, 10))
+
+    plt.grid(True, alpha=0.3)
+
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()

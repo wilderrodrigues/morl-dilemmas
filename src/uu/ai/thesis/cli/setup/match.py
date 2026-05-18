@@ -16,7 +16,7 @@ from uu.ai.thesis.core.data.model import GameConfig
 from uu.ai.thesis.core.environment.game import Game
 from uu.ai.thesis.core.functions import RandomNumberGenerator
 from uu.ai.thesis.core.rl.agent import Player
-from uu.ai.thesis.core.rl.types import Strategy
+from uu.ai.thesis.core.rl.types import Strategy, Morality
 from uu.ai.thesis.core.utility.functions import NonLinearUtility
 
 
@@ -88,8 +88,8 @@ def create_pair_of_players(game_config: GameConfig, strategy_p1: Strategy, strat
     list[tuple[Player, Player]]
         Player pairs for all requested runs.
     """
-    utility_p1 = NonLinearUtility(phi=game_config.phi) if game_config.morl and "QL" in strategy_p1.name else None
-    utility_p2 = NonLinearUtility(phi=game_config.phi) if game_config.morl and "QL" in strategy_p2.name else None
+    utility_p1 = NonLinearUtility(phi=game_config.phi) if game_config.morl and strategy_p1.value[1] != Morality.SELFISH else None
+    utility_p2 = NonLinearUtility(phi=game_config.phi) if game_config.morl and strategy_p2.value[1] != Morality.SELFISH else None
 
     pairs_of_players = [
         (Player(strategy=strategy_p1, eps_theta=game_config.eps_theta, eps_decay=game_config.eps_decay,
@@ -384,7 +384,7 @@ def run_one_episode_mixed(config: GameConfig, counter: int, destination_folder: 
 
     player_1 = game.player1
 
-    if config.morl:
+    if config.morl and player_1.utility is not None:
         player_1.q_values = np.zeros((config.num_states, config.num_actions, config.num_objectives))
     else:
         player_1.q_values = np.zeros((config.num_states, config.num_actions))
@@ -429,10 +429,10 @@ def run_one_episode_mixed(config: GameConfig, counter: int, destination_folder: 
 
         alpha = config.alpha_theta / (1 + iteration * config.decay)
 
-        if config.morl:
+        if config.morl and player_1.utility is not None:
             # TODO [Wilder]: This is where the Q-learning update happens.
             scalar_values = player_1.scalarised_q_values(discount_power=config.gamma)
-            next_action_player1 = player_1.utility.greedy_ser_action(scalar_values, next_state_index_player1)
+            next_action_player1 = NonLinearUtility.greedy_ser_action(scalar_values, next_state_index_player1)
             reward_vector_player1 = _reward_vector_to_array(reward_learning_player1, config.num_objectives)
             target_player1 = reward_vector_player1 + config.gamma * player_1.q_values[
                 next_state_index_player1, next_action_player1
@@ -442,20 +442,20 @@ def run_one_episode_mixed(config: GameConfig, counter: int, destination_folder: 
             accumulated_return_player1 += (config.gamma ** discount_step) * reward_vector_player1
             discount_step += 1
         else:
+            reward_scalar_player1 = player_1.scalarise_reward(reward_learning_player1)
             next_value_player1 = np.max(player_1.q_values[next_state_index_player1])
             player_1.q_values[state_index_player1, action_player1] *= 1 - alpha
             player_1.q_values[state_index_player1, action_player1] += alpha * (
-                    reward_learning_player1 + config.gamma * next_value_player1)
+                    reward_scalar_player1 + config.gamma * next_value_player1)
         state_player1 = next_state_player1
-
         state_player2 = next_state_player2
 
     history_q_values_player_1 = np.array(history_q_values_player_1)
 
-    if config.morl:
+    if config.morl and player_1.utility is not None:
         scalar_values = player_1.scalarised_q_values()
         q_values = player_1.q_values
-        result = player_1.utility.optimal_ser_policy(scalar_values, q_values, config.num_states)
+        result = NonLinearUtility.optimal_ser_policy(scalar_values, q_values, config.num_states)
     else:
         result = np.zeros(config.num_states)
         for state in range(len(result)):
@@ -593,14 +593,18 @@ def run_one_episode(config: GameConfig, counter: int, destination_folder: Path, 
 
     num_states = config.num_states
     num_actions = config.num_actions
-    if config.morl:
-        if config.num_objectives == 0 or config.num_objectives is None:
-            raise ValueError("MORL requires num_objectives.")
-        num_objectives = config.num_objectives
+    num_objectives = config.num_objectives
+    if config.morl and num_objectives == 0 or num_objectives is None:
+        raise ValueError("MORL requires num_objectives.")
+
+    if config.morl and player_1.utility is not None:
         player_1.q_values = np.zeros((num_states, num_actions, num_objectives))
-        player_2.q_values = np.zeros((num_states, num_actions, num_objectives))
     else:
         player_1.q_values = np.zeros((num_states, num_actions))
+
+    if config.morl and player_2.utility is not None:
+        player_2.q_values = np.zeros((num_states, num_actions, num_objectives))
+    else:
         player_2.q_values = np.zeros((num_states, num_actions))
 
     state_index_converter = game.state_index_converter
@@ -646,9 +650,9 @@ def run_one_episode(config: GameConfig, counter: int, destination_folder: Path, 
 
         alpha = config.alpha_theta / (1 + iteration * config.decay)
 
-        if config.morl:
+        if config.morl and player_1.utility is not None:
             scalar_values = player_1.scalarised_q_values(discount_power=config.gamma)
-            next_action_player1 = player_1.utility.greedy_ser_action(scalar_values, next_state_index_player1)
+            next_action_player1 = NonLinearUtility.greedy_ser_action(scalar_values, next_state_index_player1)
             reward_vector_player1 = _reward_vector_to_array(reward_learning_player1, config.num_objectives)
             target_player1 = reward_vector_player1 + config.gamma * player_1.q_values[
                 next_state_index_player1, next_action_player1
@@ -656,15 +660,16 @@ def run_one_episode(config: GameConfig, counter: int, destination_folder: Path, 
             player_1.q_values[state_index_player1, action_player1] *= 1 - alpha
             player_1.q_values[state_index_player1, action_player1] += alpha * target_player1
         else:
+            reward_scalar_player1 = player_1.scalarise_reward(reward_learning_player1)
             next_value_player1 = np.max(player_1.q_values[next_state_index_player1])
             player_1.q_values[state_index_player1, action_player1] *= 1 - alpha
             player_1.q_values[state_index_player1, action_player1] += alpha * (
-                    reward_learning_player1 + config.gamma * next_value_player1)
+                    reward_scalar_player1 + config.gamma * next_value_player1)
         state_player1 = next_state_player1
 
-        if config.morl:
+        if config.morl and player_2.utility is not None:
             scalar_values = player_2.scalarised_q_values(discount_power=config.gamma)
-            next_action_player2 = player_2.utility.greedy_ser_action(scalar_values, next_state_index_player2)
+            next_action_player2 = NonLinearUtility.greedy_ser_action(scalar_values, next_state_index_player2)
             reward_vector_player2 = _reward_vector_to_array(reward_learning_player2, config.num_objectives)
             target_player2 = reward_vector_player2 + config.gamma * player_2.q_values[
                 next_state_index_player2, next_action_player2
@@ -675,22 +680,20 @@ def run_one_episode(config: GameConfig, counter: int, destination_folder: Path, 
             accumulated_return_player2 += (config.gamma ** discount_step) * reward_vector_player2
             discount_step += 1
         else:
+            reward_scalar_player2 = player_2.scalarise_reward(reward_learning_player2)
             next_value_player2 = np.max(player_2.q_values[next_state_index_player2])
             player_2.q_values[state_index_player2, action_player2] *= 1 - alpha
             player_2.q_values[state_index_player2, action_player2] += alpha * (
-                    reward_learning_player2 + config.gamma * next_value_player2)
+                    reward_scalar_player2 + config.gamma * next_value_player2)
         state_player2 = next_state_player2
 
     history_q_values_player_1 = np.array(history_q_values_player_1)
     history_q_values_player_2 = np.array(history_q_values_player_2)
 
-    if config.morl:
+    if config.morl and player_1.utility is not None:
         scalar_values_p1 = player_1.scalarised_q_values()
         q_values_p1 = player_1.q_values
-        result_player1 = player_1.utility.optimal_ser_policy(scalar_values_p1, q_values_p1, num_states)
-        scalar_values_p2 = player_2.scalarised_q_values()
-        q_values_p2 = player_2.q_values
-        result_player2 = player_2.utility.optimal_ser_policy(scalar_values_p2, q_values_p2, num_states)
+        result_player1 = NonLinearUtility.optimal_ser_policy(scalar_values_p1, q_values_p1, num_states)
     else:
         result_player1 = np.zeros(num_states)
         for state in range(len(result_player1)):
@@ -698,7 +701,11 @@ def run_one_episode(config: GameConfig, counter: int, destination_folder: Path, 
                 result_player1[state] = None
             else:
                 result_player1[state] = np.argmax(player_1.q_values[state])
-
+    if config.morl and player_2.utility is not None:
+        scalar_values_p2 = player_2.scalarised_q_values()
+        q_values_p2 = player_2.q_values
+        result_player2 = NonLinearUtility.optimal_ser_policy(scalar_values_p2, q_values_p2, num_states)
+    else:
         result_player2 = np.zeros(num_states)
         for state in range(len(result_player2)):
             if not np.any(player_2.q_values[state]):

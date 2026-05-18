@@ -75,7 +75,8 @@ class NonLinearUtility:
 
         return self.moral_weight * self.signed_power(moral, self.phi) + self.individual_weight * individual
 
-    def greedy_ser_action(self, scalar_values: npt.NDArray, state_index: int) -> int:
+    @staticmethod
+    def greedy_ser_action(scalar_values: npt.NDArray, state_index: int) -> int:
         """Select the greedy action from scalarised action values.
 
         Parameters
@@ -92,7 +93,8 @@ class NonLinearUtility:
         """
         return int(np.argmax(scalar_values[state_index]))
 
-    def optimal_ser_policy(self, scalar_q_values: npt.NDArray, q_values: npt.NDArray, num_states: int) -> np.ndarray:
+    @staticmethod
+    def optimal_ser_policy(scalar_q_values: npt.NDArray, q_values: npt.NDArray, num_states: int) -> np.ndarray:
         """Build a greedy policy from scalarised vector Q-values.
 
         Parameters

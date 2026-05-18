@@ -89,7 +89,7 @@ def run_static(config: GameConfig) -> None:
     logger.info(
         f"Running {title1} vs {title2}, {num_runs} runs, {num_iterations} iterations each, storing in {destination_folder}")
 
-    if 'QL' in title1 or 'QL' in title2:
+    if "QL" in title1 or "QL" in title2:
         raise ValueError("This is not the right function for these player types!")
 
     results_path = Path("results") / config.game_type / destination_folder
@@ -365,8 +365,8 @@ def main(
     )
     typer.echo(json.dumps(asdict(config), indent=2, sort_keys=True))
 
-    if 'QL' in title1:
-        if 'QL' in title2:
+    if "QL" in title1:
+        if "QL" in title2:
             logger.info("Both players are Q-learning, running mixed strategy.")
             run_qlearning_vs_qlearning(config=config)
         else:
