@@ -4,6 +4,7 @@
 #################################
 
 MORL=$1
+PHI=$2
 
 if [ -n "$MORL" ] && [ "$MORL" = "morl" ]; then
     MORL="--morl"

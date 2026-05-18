@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+paper/
+
 # Native extensions and build outputs
 *.so
 *.dylib
