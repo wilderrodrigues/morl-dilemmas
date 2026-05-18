@@ -12,7 +12,7 @@ else
     MORL="--no-morl"
 fi
 
-if [ -n "PHI" ]; then
+if [ -n "$PHI" ] && [ "$PHI" != "" ]; then
     echo "Using Phi param to regulate morality: $PHI"
 else
     PHI=0.5
