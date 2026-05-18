@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 paper/
+hpc/
 
 # Native extensions and build outputs
 *.so
