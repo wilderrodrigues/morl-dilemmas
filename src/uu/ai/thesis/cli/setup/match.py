@@ -305,7 +305,8 @@ def store_learning_data(optimal_policies: list, q_values_player_1: list, q_value
     data are provided.
     """
     # Save RESULTS_list to numpy
-    np.save(destination_folder / "RESULTS_list.npy", optimal_policies, allow_pickle=True)
+    # TODO [Wilder]: Disable NPY saving for now.
+    # np.save(destination_folder / "RESULTS_list.npy", optimal_policies, allow_pickle=True)
 
     # Save RESULTS_list to txt
     with open(destination_folder / "RESULTS_list.txt", 'w') as fp:
@@ -314,7 +315,8 @@ def store_learning_data(optimal_policies: list, q_values_player_1: list, q_value
             fp.write(f"\n{str(item)}")
 
     # Save Q_VALUES_list for player1 (learning over time) to .npy file
-    np.save(destination_folder / "Q_VALUES_player1_list.npy", q_values_player_1, allow_pickle=True)
+    # TODO [Wilder]: Disable NPY saving for now.
+    # np.save(destination_folder / "Q_VALUES_player1_list.npy", q_values_player_1, allow_pickle=True)
 
 
     # Save Q_VALUES_list for each player (learning over time) to txt file
@@ -324,7 +326,8 @@ def store_learning_data(optimal_policies: list, q_values_player_1: list, q_value
 
     # Save Q_VALUES_list for player2 if available - if player2 is a QL player
     if q_values_player_2:
-        np.save(destination_folder / "Q_VALUES_player2_list.npy", q_values_player_2, allow_pickle=True)
+        # TODO [Wilder]: Disable NPY saving for now.
+        # np.save(destination_folder / "Q_VALUES_player2_list.npy", q_values_player_2, allow_pickle=True)
 
         with open(destination_folder / "Q_VALUES_player2_list.txt", 'w') as fp:
             for item in q_values_player_2:

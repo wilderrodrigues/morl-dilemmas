@@ -40,8 +40,21 @@ The project currently uses a PyEnv in combination with Poetry. To set up the env
 
 * **NB:** _This setup is for MacOS only. Do some googling to get it working with Linux environments._
 
-```bash
+### For MacOS
+
+```shell
 brew install pyenv pyenv-virtualenv
+```
+
+### For Linux
+
+```shell
+curl -fsSL https://pyenv.run | bash
+```
+
+Then proceed with the following commands:
+
+```shell
 pyenv install 3.13.7
 pyenv activate 3.13.7
 ```
