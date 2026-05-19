@@ -30,17 +30,16 @@ def clear_previous_runs(results_path: Path) -> None:
     ----------
     results_path : Path
         Root directory containing experiment result subdirectories. Any
-        subdirectory whose name contains ``"_eps_theta1.0_eps_decay"`` is
-        renamed to remove that suffix.
+        subdirectory whose name contains ``"_eps_"`` is renamed to remove the params suffix.
     """
     for dirname in os.listdir(results_path):
-        if "_eps_theta1.0_eps_decay" in dirname:
-            # Get rid of formatting that reflects our parameter choice
-            new_dir = results_path / dirname.replace("_eps_theta1.0_eps_decay", "")
+        if "_eps_" in dirname:
+            params_idx = dirname.find("_eps_")
+            new_dir = results_path / dirname[:params_idx]
             if new_dir.exists():
                 logger.info(f"Old run exists. Removing directory '{new_dir}' to be able to rename the new run.")
                 shutil.rmtree(os.fspath(new_dir))
-            os.rename(results_path / dirname, results_path / dirname.replace("_eps_theta1.0_eps_decay", ""))
+            os.rename(results_path / dirname, new_dir)
 
 
 def plot_games_results(destination_folder: Path, player1_title: str, player2_title: str, num_runs: int,
@@ -92,24 +91,20 @@ def setup_path_for_pairs(results_path: Path, game_type: str, num_runs: int, morl
     morl : bool
         Whether the experiment was executed with MORL mode on or not.
     """
-    # ql_static_opponents = ["QLS_QLS", "QLUT_QLS", "QLDE_QLS", "QLVE_e_QLS", "QLVE_k_QLS"]
-    # ext_moral_opponents = ["QLUT_QLUT", "QLDE_QLUT", "QLDE_QLDE", "QLVE_e_QLUT"]
-    ql_static_opponents = ["QLS_QLS", "QLUT_QLS", "QLDE_QLS"]
-    ext_moral_opponents = ["QLUT_QLUT", "QLDE_QLUT"]
-    int_moral_opponents = ["QLVM_QLVM", "QLVM_QLS"]
-    # int_moral_opponents = ["QLVE_e_QLDE", "QLVE_e_QLVE_e", "QLVE_k_QLUT", "QLVE_k_QLDE", "QLVE_k_QLVE_e",
-    #                        "QLVE_k_QLVE_k"]
-    # static_opponents = ["QLS_AC", "QLS_AD", "QLS_TFT", "QLS_Random", "QLUT_AC", "QLUT_AD", "QLUT_TFT", "QLUT_Random",
-    #                     "QLDE_AC", "QLDE_AD", "QLDE_TFT", "QLDE_Random", "QLVE_e_AC", "QLVE_e_AD", "QLVE_e_TFT",
-    #                     "QLVE_e_Random", "QLVE_k_AC", "QLVE_k_AD", "QLVE_k_TFT", "QLVE_k_Random"]
+    ql_static_opponents = ["QLS_QLS", "QLUT_QLS", "QLDE_QLS", "QLVE_e_QLS", "QLVE_k_QLS"]
+    ext_moral_opponents = ["QLUT_QLUT", "QLDE_QLUT", "QLDE_QLDE", "QLVE_e_QLUT"]
+    int_moral_opponents = ["QLVE_e_QLDE", "QLVE_e_QLVE_e", "QLVE_k_QLUT", "QLVE_k_QLDE", "QLVE_k_QLVE_e",
+                           "QLVE_k_QLVE_k"]
+    static_opponents = ["QLS_AC", "QLS_AD", "QLS_TFT", "QLS_Random", "QLUT_AC", "QLUT_AD", "QLUT_TFT", "QLUT_Random",
+                        "QLDE_AC", "QLDE_AD", "QLDE_TFT", "QLDE_Random", "QLVE_e_AC", "QLVE_e_AD", "QLVE_e_TFT",
+                        "QLVE_e_Random", "QLVE_k_AC", "QLVE_k_AD", "QLVE_k_TFT", "QLVE_k_Random"]
 
     ql_static_opponents_path = [results_path / f"{games_pair}_MORL" if morl else f"{games_pair}" for games_pair in ql_static_opponents]
     ext_moral_opponents_path = [results_path / f"{games_pair}_MORL" if morl else f"{games_pair}" for games_pair in ext_moral_opponents]
     int_moral_opponents_path = [results_path / f"{games_pair}_MORL" if morl else f"{games_pair}" for games_pair in int_moral_opponents]
-    # static_opponents_path = [results_path / f"{games_pair}_MORL" if morl else f"{games_pair}" for games_pair in static_opponents]
+    static_opponents_path = [results_path / f"{games_pair}_MORL" if morl else f"{games_pair}" for games_pair in static_opponents]
 
-    # all_learners_paths = ql_static_opponents_path + ext_moral_opponents_path + int_moral_opponents_path + static_opponents_path
-    all_learners_paths = ql_static_opponents_path + ext_moral_opponents_path + int_moral_opponents_path
+    all_learners_paths = ql_static_opponents_path + ext_moral_opponents_path + int_moral_opponents_path + static_opponents_path
     pairs_index = 2
     for destination_folder in all_learners_paths:
         path_to_split = os.fspath(destination_folder)
@@ -145,15 +140,13 @@ def setup_path_for_mixed_players(results_path: Path, game_type: str, num_runs: i
     morl : bool
         Whether the experiment was executed with MORL mode on or not.
     """
-    # ql_virtue_mixed_opponents = ["QLVM_QLS", "QLVM_QLUT", "QLVM_QLDE", "QLVM_QLVE_e", "QLVM_QLVE_k", "QLVM_QLVM"]
-    ql_virtue_mixed_opponents = ["QLVM_QLS", "QLVM_QLVM"]
-    # ql_static_opponents = ["QLVM_AC", "QLVM_AD", "QLVM_TFT", "QLVM_Random"]
+    ql_virtue_mixed_opponents = ["QLVM_QLS", "QLVM_QLUT", "QLVM_QLDE", "QLVM_QLVE_e", "QLVM_QLVE_k", "QLVM_QLVM"]
+    ql_static_opponents = ["QLVM_AC", "QLVM_AD", "QLVM_TFT", "QLVM_Random"]
 
     ql_virtue_mixed_opponents_path = [results_path / f"{games_pair}_MORL" if morl else f"{games_pair}" for games_pair in ql_virtue_mixed_opponents]
-    # ql_static_opponents_path = [results_path / f"{games_pair}_MORL" if morl else f"{games_pair}" for games_pair in ql_static_opponents]
+    ql_static_opponents_path = [results_path / f"{games_pair}_MORL" if morl else f"{games_pair}" for games_pair in ql_static_opponents]
 
-    # all_learners_path = ql_virtue_mixed_opponents_path + ql_static_opponents_path
-    all_learners_path = ql_virtue_mixed_opponents_path
+    all_learners_path = ql_virtue_mixed_opponents_path + ql_static_opponents_path
 
     for destination_folder in all_learners_path:
         path_to_split = os.fspath(destination_folder)

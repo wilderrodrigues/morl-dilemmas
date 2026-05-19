@@ -18,32 +18,32 @@ else
     PHI=0.5
 fi
 
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLUT --eps-theta 0.5 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLDE --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVE_e --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVE_k --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVM --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
-#
-## Run part 1 - QLS vs all other learners, some moral vs moral - DONE ON 3
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLS --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLUT --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLDE --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLUT --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLDE --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLDE --title2 QLDE --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLDE --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVE_e --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#
-## Run part 2 - remainder of moral vs moral; moral mixed vs. all others - DONE ON 3
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLDE --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLVE_e --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
-#poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLVE_k --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLUT --eps-theta 0.5 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLDE --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVE_e --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVE_k --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVM --eps-theta 1.0 --eps-decay --phi "$PHI" --num-iterations 20000 "$MORL"
+
+# Run part 1 - QLS vs all other learners, some moral vs moral - DONE ON 3
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLS --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLUT --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLDE --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLUT --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLDE --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLDE --title2 QLDE --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLDE --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_e --title2 QLVE_e --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+
+# Run part 2 - remainder of moral vs moral; moral mixed vs. all others - DONE ON 3
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLDE --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLVE_e --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVE_k --title2 QLVE_k --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLUT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLDE --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLVE_e --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
@@ -75,3 +75,21 @@ poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 AD --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 TFT --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
 poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 Random --eps-theta 1.0 --eps-decay --phi "$PHI" "$MORL"
+
+###########################################
+#### CHECK MIXED AGENT RELATIVE VALUES ####
+###########################################
+
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 AD --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.0 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 AD --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.2 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 AD --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.4 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 AD --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.6 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 AD --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.8 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 AD --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 1.0 "$MORL"
+
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.0 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.2 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.4 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.6 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 0.8 "$MORL"
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLVM --title2 QLS --eps-theta 1.0 --eps-decay --phi "$PHI" --beta 1.0 "$MORL"
