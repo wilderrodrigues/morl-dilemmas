@@ -174,23 +174,23 @@ def store_raw_data(destination_folder: Path, num_runs: int) -> None:
     df_reward_intrinsic_player2.to_csv(os.fspath(player2_path / "df_reward_intrinsic.csv"))
     logger.info("Saved intrinsic rewards for players 1 and 2.")
 
-    # Store cumulative_reward_game [extrinsic]
-    cumulative_reward_game_player1 = np.cumsum(df_reward_game_player1["episode"])
-    cumulative_reward_game_player2 = np.cumsum(df_reward_game_player2["episode"])
-
-    np.savetxt(os.fspath(player1_path / "df_cumulative_reward_game.csv"), cumulative_reward_game_player1, delimiter=',')
-    np.savetxt(os.fspath(player2_path / "df_cumulative_reward_game.csv"), cumulative_reward_game_player2, delimiter=',')
-    logger.info("Saved cumulative game [extrinsic] rewards for players 1 and 2.")
-
-    # Store cumulative_reward_intrinsic
-    cumulative_reward_intrinsic_player1 = np.cumsum(df_reward_intrinsic_player1["episode"])
-    cumulative_reward_intrinsic_player2 = np.cumsum(df_reward_intrinsic_player2["episode"])
-
-    np.savetxt(os.fspath(player1_path / "df_cumulative_reward_intrinsic.csv"), cumulative_reward_intrinsic_player1,
-               delimiter=',')
-    np.savetxt(os.fspath(player2_path / "df_cumulative_reward_intrinsic.csv"), cumulative_reward_intrinsic_player2,
-               delimiter=',')
-    logger.info("Saved cumulative intrinsic reward")
+    # # Store cumulative_reward_game [extrinsic]
+    # cumulative_reward_game_player1 = np.cumsum(df_reward_game_player1["episode"])
+    # cumulative_reward_game_player2 = np.cumsum(df_reward_game_player2["episode"])
+    #
+    # np.savetxt(os.fspath(player1_path / "df_cumulative_reward_game.csv"), cumulative_reward_game_player1, delimiter=',')
+    # np.savetxt(os.fspath(player2_path / "df_cumulative_reward_game.csv"), cumulative_reward_game_player2, delimiter=',')
+    # logger.info("Saved cumulative game [extrinsic] rewards for players 1 and 2.")
+    #
+    # # Store cumulative_reward_intrinsic
+    # cumulative_reward_intrinsic_player1 = np.cumsum(df_reward_intrinsic_player1["episode"])
+    # cumulative_reward_intrinsic_player2 = np.cumsum(df_reward_intrinsic_player2["episode"])
+    #
+    # np.savetxt(os.fspath(player1_path / "df_cumulative_reward_intrinsic.csv"), cumulative_reward_intrinsic_player1,
+    #            delimiter=',')
+    # np.savetxt(os.fspath(player2_path / "df_cumulative_reward_intrinsic.csv"), cumulative_reward_intrinsic_player2,
+    #            delimiter=',')
+    # logger.info("Saved cumulative intrinsic reward")
 
     # Store collective reward
     df_reward_collective = pd.concat([df["reward_collective"] for df in rewards_dataframes], axis=1)
@@ -198,12 +198,12 @@ def store_raw_data(destination_folder: Path, num_runs: int) -> None:
     df_reward_collective.to_csv(os.fspath(destination_folder / "df_reward_collective.csv"))
     logger.info("Saved collective reward")
 
-    # Store cumulative_reward_collective
-    cumulative_reward_collective = np.cumsum(df_reward_collective["episode"])
-
-    np.savetxt(os.fspath(destination_folder / "df_cumulative_reward_collective.csv"), cumulative_reward_collective,
-               delimiter=',')
-    logger.info("Saved cumulative collective reward")
+    # # Store cumulative_reward_collective
+    # cumulative_reward_collective = np.cumsum(df_reward_collective["episode"])
+    #
+    # np.savetxt(os.fspath(destination_folder / "df_cumulative_reward_collective.csv"), cumulative_reward_collective,
+    #            delimiter=',')
+    # logger.info("Saved cumulative collective reward")
 
     # Store gini reward
     df_reward_gini = pd.concat([df["reward_gini"] for df in rewards_dataframes], axis=1)
@@ -211,23 +211,23 @@ def store_raw_data(destination_folder: Path, num_runs: int) -> None:
     df_reward_gini.to_csv(os.fspath(destination_folder / "df_reward_gini.csv"))
     logger.info("Saved gini reward")
 
-    # Store cumulative_reward_gini
-    cumulative_reward_gini = np.cumsum(df_reward_gini["episode"])
-
-    np.savetxt(os.fspath(destination_folder / "df_cumulative_reward_gini.csv"), cumulative_reward_gini, delimiter=',')
-    logger.info("Saved cumulative gini reward")
+    # # Store cumulative_reward_gini
+    # cumulative_reward_gini = np.cumsum(df_reward_gini["episode"])
+    #
+    # np.savetxt(os.fspath(destination_folder / "df_cumulative_reward_gini.csv"), cumulative_reward_gini, delimiter=',')
+    # logger.info("Saved cumulative gini reward")
 
     # Store min reward
     df_reward_min = pd.concat([df["reward_min"] for df in rewards_dataframes], axis=1)
     df_reward_min = df_reward_min.set_axis(axis_labels, axis=1)
     df_reward_min.to_csv(os.fspath(destination_folder / "df_reward_min.csv"))
     logger.info("Saved min reward")
-
-    # Store cumulative_reward_min
-    cumulative_reward_min = np.cumsum(df_reward_min["episode"])
-
-    np.savetxt(os.fspath(destination_folder / "df_cumulative_reward_min.csv"), cumulative_reward_min, delimiter=',')
-    logger.info("Saved cumulative min reward")
+    #
+    # # Store cumulative_reward_min
+    # cumulative_reward_min = np.cumsum(df_reward_min["episode"])
+    #
+    # np.savetxt(os.fspath(destination_folder / "df_cumulative_reward_min.csv"), cumulative_reward_min, delimiter=',')
+    # logger.info("Saved cumulative min reward")
 
     # Store state
     df_state_player1 = pd.concat([df["state_player1"] for df in rewards_dataframes], axis=1)
@@ -265,6 +265,7 @@ def save_history(history: DataFrame, run_idx: int, destination_folder: Path) -> 
         Output folder for the current experiment run where the ``history``
         subdirectory is created if needed.
     """
+
     history_path = destination_folder / "history"
     history_path.mkdir(parents=True, exist_ok=True)
 
@@ -314,6 +315,7 @@ def store_learning_data(optimal_policies: list, q_values_player_1: list, q_value
 
     # Save Q_VALUES_list for player1 (learning over time) to .npy file
     np.save(destination_folder / "Q_VALUES_player1_list.npy", q_values_player_1, allow_pickle=True)
+
 
     # Save Q_VALUES_list for each player (learning over time) to txt file
     with open(destination_folder / "Q_VALUES_player1_list.txt", 'w') as fp:
