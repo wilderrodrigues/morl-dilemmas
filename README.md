@@ -91,7 +91,15 @@ To run the experiments, use one of the `bash` scripts provided in the root direc
 to run all IPD experiments, execute the following command:
 
 ```shell
-./run_ipd.sh
+./run_ipd.sh morl 0.5
+```
+
+The `morl` argument is to enable multi-objective reinforcement learning. The `0.5` argument is the Phi parameter for the utility function.
+
+Once the run is done, please clean the `run*.csv` to make room for the next run.
+
+```shell
+find . -type f -name 'run*.csv' -delete
 ```
 
 ## Pushing results with Git LFS - Large File Storage
