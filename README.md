@@ -94,6 +94,24 @@ to run all IPD experiments, execute the following command:
 ./run_ipd.sh
 ```
 
+## Pushing results with Git LFS - Large File Storage
+
+Please follow the [Git LFS](https://git-lfs.com/) page for instructions on how to install and use Git LFS.
+
+We already have .ZIP files mapped to the Git LFS attributes file. To push the files to Git LFS, please run the following command:
+
+```shell
+git add ipd-results.zip
+git commit -m "Adds IPD results to Git LFS"
+git push origin main
+```
+
+To fetch the files from Git LFS, please run the following command:
+
+```shell
+git lfs fetch
+```
+
 ## Plotting results
 
 To plot the results for the experiments, please make use of the `compute` CLI. To generate the plots for the IPD experient,
