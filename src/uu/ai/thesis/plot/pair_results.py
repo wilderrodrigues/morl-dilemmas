@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import dataframe_image as dfi
 
+from uu import logger
+
 
 def color_condition(map_value: str) -> str:
     """Map an action-state label to a cell background color.
@@ -148,12 +150,34 @@ def plot_results(destination_folder: Path, player1_title: str, player2_title: st
     ##################################
     ####  Cumulative Game reward  ####
     ##################################
-    df_player1 = pd.read_csv(destination_folder / "player1" / "df_cumulative_reward_game.csv", index_col=0)
+    try:
+        df_player1 = pd.read_csv(destination_folder / "player1" / "df_cumulative_reward_game.csv", index_col=0)
+    except FileNotFoundError:
+        df_player1 = pd.read_csv(destination_folder / "player1" / "df_reward_game.csv", index_col=0)
+        episode_cols = [col for col in df_player1.columns if col.startswith("episode")]
+        df_player1 = df_player1[episode_cols].cumsum(axis=0)
+        df_player1.to_csv(
+            destination_folder / "player1" / "df_cumulative_reward_game.csv",
+            index=False,
+        )
+        logger.info("Saved the cumulative game [extrinsic] rewards for player 1.")
+
     mean_player1 = df_player1.mean(axis=1)
     std_player1 = df_player1.std(axis=1)
     confidence_interval_player1 = z_score * std_player1 / np.sqrt(n_runs)
 
-    df_player2 = pd.read_csv(destination_folder / "player2" / "df_cumulative_reward_game.csv", index_col=0)
+    try:
+        df_player2 = pd.read_csv(destination_folder / "player2" / "df_cumulative_reward_game.csv", index_col=0)
+    except FileNotFoundError:
+        df_player2 = pd.read_csv(destination_folder / "player2" / "df_reward_game.csv", index_col=0)
+        episode_cols = [col for col in df_player2.columns if col.startswith("episode")]
+        df_player2 = df_player2[episode_cols].cumsum(axis=0)
+        df_player2.to_csv(
+            destination_folder / "player2" / "df_cumulative_reward_game.csv",
+            index=False,
+        )
+        logger.info("Saved the cumulative game [extrinsic] rewards for player 2.")
+
     mean_player2 = df_player2.mean(axis=1)
     std_player2 = df_player2.std(axis=1)
     confidence_interval_player2 = z_score * std_player2 / np.sqrt(n_runs)
@@ -188,7 +212,7 @@ def plot_results(destination_folder: Path, player1_title: str, player2_title: st
     std_player1 = df_player1.std(axis=1)
     confidence_interval_player1 = z_score * std_player1 / np.sqrt(n_runs)
 
-    df_player2 = pd.read_csv(f'{destination_folder}/player2/df_reward_game.csv', index_col=0)
+    df_player2 = pd.read_csv(destination_folder / "player2" / "df_reward_game.csv", index_col=0)
     mean_player2 = df_player2.mean(axis=1)
     std_player2 = df_player2.std(axis=1)
     confidence_interval_player2 = z_score * std_player2 / np.sqrt(n_runs)
@@ -226,11 +250,33 @@ def plot_results(destination_folder: Path, player1_title: str, player2_title: st
     ######################################
     #### Cumulative - Intrinsic reward ###
     ######################################
-    df_player1 = pd.read_csv(destination_folder / "player1" / "df_cumulative_reward_intrinsic.csv", index_col=0)
+    try:
+        df_player1 = pd.read_csv(destination_folder / "player1" / "df_cumulative_reward_intrinsic.csv", index_col=0)
+    except FileNotFoundError:
+        df_player1 = pd.read_csv(destination_folder / "player1" / "df_reward_intrinsic.csv", index_col=0)
+        episode_cols = [col for col in df_player1.columns if col.startswith("episode")]
+        df_player1 = df_player1[episode_cols].cumsum(axis=0)
+        df_player1.to_csv(
+            destination_folder / "player1" / "df_cumulative_reward_intrinsic.csv",
+            index=False,
+        )
+        logger.info("Saved the cumulative intrinsic rewards for player 1.")
+
     mean_player1 = df_player1.mean(axis=1)
     std_player1 = df_player1.std(axis=1)
 
-    df_player2 = pd.read_csv(destination_folder / "player2" / "df_cumulative_reward_intrinsic.csv", index_col=0)
+    try:
+        df_player2 = pd.read_csv(destination_folder / "player2" / "df_cumulative_reward_intrinsic.csv", index_col=0)
+    except FileNotFoundError:
+        df_player2 = pd.read_csv(destination_folder / "player2" / "df_reward_intrinsic.csv", index_col=0)
+        episode_cols = [col for col in df_player2.columns if col.startswith("episode")]
+        df_player2 = df_player2[episode_cols].cumsum(axis=0)
+        df_player2.to_csv(
+            destination_folder / "player2" / "df_cumulative_reward_intrinsic.csv",
+            index=False,
+        )
+        logger.info("Saved the cumulative intrinsic rewards for player 2.")
+
     mean_player2 = df_player2.mean(axis=1)
     std_player2 = df_player2.std(axis=1)
 
@@ -346,7 +392,18 @@ def plot_results(destination_folder: Path, player1_title: str, player2_title: st
     #############################################
     #### Cumulative - Collective Game reward ####
     #############################################
-    df_cumulative = pd.read_csv(destination_folder / "df_cumulative_reward_collective.csv", index_col=0)
+    try:
+        df_cumulative = pd.read_csv(destination_folder / "df_cumulative_reward_collective.csv", index_col=0)
+    except FileNotFoundError:
+        df_cumulative = pd.read_csv(destination_folder / "df_reward_collective.csv", index_col=0)
+        episode_cols = [col for col in df_cumulative.columns if col.startswith("episode")]
+        df_cumulative = df_cumulative[episode_cols].cumsum(axis=0)
+        df_cumulative.to_csv(
+            destination_folder / "df_cumulative_reward_collective.csv",
+            index=False,
+        )
+        logger.info("Saved the cumulative collective reward")
+
     mean_cumulative = df_cumulative.mean(axis=1)
     std_cumulative = df_cumulative.std(axis=1)
     confidence_interval_cumulative = z_score * std_cumulative / np.sqrt(n_runs)
@@ -406,7 +463,18 @@ def plot_results(destination_folder: Path, player1_title: str, player2_title: st
     #######################################
     #### Cumulative - Gini Game reward ####
     #######################################
-    df_gini = pd.read_csv(destination_folder / "df_cumulative_reward_gini.csv", index_col=0)
+    try:
+        df_gini = pd.read_csv(destination_folder / "df_cumulative_reward_gini.csv", index_col=0)
+    except FileNotFoundError:
+        df_gini = pd.read_csv(destination_folder / "df_reward_gini.csv", index_col=0)
+        episode_cols = [col for col in df_gini.columns if col.startswith("episode")]
+        df_gini = df_gini[episode_cols].cumsum(axis=0)
+        df_gini.to_csv(
+            destination_folder / "df_cumulative_reward_gini.csv",
+            index=False,
+        )
+        logger.info("Saved the cumulative gini reward")
+
     mean_gini = df_gini.mean(axis=1)
     std_gini = df_gini.std(axis=1)
     confidence_interval_gini = z_score * std_gini / np.sqrt(n_runs)
@@ -459,7 +527,18 @@ def plot_results(destination_folder: Path, player1_title: str, player2_title: st
     ######################################
     #### Cumulative - Min Game reward ####
     ######################################
-    df_min_reward = pd.read_csv(destination_folder / "df_cumulative_reward_min.csv", index_col=0)
+    try:
+        df_min_reward = pd.read_csv(destination_folder / "df_cumulative_reward_min.csv", index_col=0)
+    except FileNotFoundError:
+        df_min_reward = pd.read_csv(destination_folder / "df_reward_min.csv", index_col=0)
+        episode_cols = [col for col in df_min_reward.columns if col.startswith("episode")]
+        df_min_reward = df_min_reward[episode_cols].cumsum(axis=0)
+        df_min_reward.to_csv(
+            destination_folder / "df_cumulative_reward_min.csv",
+            index=False,
+        )
+        logger.info("Saved the cumulative min reward")
+
     mean_min_reward = df_min_reward.mean(axis=1)
     std_min_reward = df_min_reward.std(axis=1)
     confidence_interval_min_reward = z_score * std_min_reward / np.sqrt(n_runs)
@@ -484,7 +563,7 @@ def plot_results(destination_folder: Path, player1_title: str, player2_title: st
     ##########################################
     #### Non-cumulative - Min Game reward ####
     ##########################################
-    df_min_reward_on_cumulative = pd.read_csv(f'{destination_folder}/df_reward_min.csv', index_col=0)
+    df_min_reward_on_cumulative = pd.read_csv(destination_folder / "df_reward_min.csv", index_col=0)
     mean_min_reward_on_cumulative = df_min_reward_on_cumulative.mean(axis=1)
     std_min_reward_on_cumulative = df_min_reward_on_cumulative.std(axis=1)
     confidence_interval_min_reward_on_cumulative = z_score * std_min_reward_on_cumulative / np.sqrt(n_runs)
