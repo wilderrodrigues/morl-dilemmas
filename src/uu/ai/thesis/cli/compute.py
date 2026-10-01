@@ -16,6 +16,7 @@ from uu.ai.thesis.plot.action_matrices import plot_matrix_action_pairs
 from uu.ai.thesis.plot.outcomes import plot_matrix_social_outcomes
 from uu.ai.thesis.plot.pair_results import plot_results, plot_actions, plot_action_types_area, plot_first_n_actions, \
     visualise_first_n_actions_matrix, plot_last_n_actions, visualise_last_n_actions_matrix, plot_action_pairs
+from uu.ai.thesis.plot.stacked_rewards import plot_stacked_relative_reward, plot_stacked_relative_moral_reward
 
 app = typer.Typer(add_completion=False, help="Computes the results iterative experiments for different strategies.")
 
@@ -172,7 +173,7 @@ def setup_path_for_mixed_players(results_path: Path, game_type: str, num_runs: i
 @app.command()
 def main(
         game_type: Annotated[str, typer.Option(help="Game to run, e.g. 'ipd', 'ish', 'ivd'.")] = "ipd",
-        results_output: Annotated[Path, typer.Option(help="Path to the experiment results.")] = Path("cluster-results") / "ipd",
+        results_output: Annotated[Path, typer.Option(help="Path to the experiment results.")] = Path("results"),
         num_runs: Annotated[int, typer.Option(help="Number of runs with different seeds.")] = 100,
         morl: Annotated[bool, typer.Option(help="Whether the experiment was executed with MORL mode on or not.")] = True,
 ) -> None:
@@ -184,20 +185,21 @@ def main(
         Short game identifier used to locate the results directory and label
         generated plots.
     results_output : Path, optional
-        The directory to store the experiment results.
+        The directory to store the experiment results. For example, ./results/ipd-1.0.
     num_runs : int | None, optional
         Number of experiment runs expected in each result bundle.
     morl : bool, optional
         Whether the experiment was executed with MORL mode on or not.
     """
-    results_output_path = results_output / game_type
-    clear_previous_runs(results_output_path)
+    clear_previous_runs(results_output)
 
-    setup_path_for_pairs(results_path=results_output_path, game_type=game_type, num_runs=num_runs, morl=morl)
-    setup_path_for_mixed_players(results_path=results_output_path, game_type=game_type, num_runs=num_runs, morl=morl)
-    plot_matrix_action_pairs(destination_path=results_output_path, num_runs=num_runs, morl=morl)
+    setup_path_for_pairs(results_path=results_output, game_type=game_type, num_runs=num_runs, morl=morl)
+    setup_path_for_mixed_players(results_path=results_output, game_type=game_type, num_runs=num_runs, morl=morl)
+    plot_matrix_action_pairs(destination_path=results_output, num_runs=num_runs, morl=morl)
 
-    plot_matrix_social_outcomes(results_output_path, game_type, num_runs)
+    plot_matrix_social_outcomes(results_output, game_type, num_runs)
+    plot_stacked_relative_reward(results_output, game_type, num_runs)
+    plot_stacked_relative_moral_reward(results_output, game_type, num_runs)
 
 
 if __name__ == "__main__":

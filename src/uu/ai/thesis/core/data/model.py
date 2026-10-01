@@ -2,7 +2,6 @@
 """Configuration models and default values for game experiments."""
 from dataclasses import dataclass
 
-
 DEFAULT_MASTER_SEED = 1
 DEFAULT_NUM_ITERATIONS = 10000
 DEFAULT_NUM_RUNS = 100
@@ -13,6 +12,17 @@ DEFAULT_GAMMA = 0.9
 DEFAULT_BETA = 0.5
 DEFAULT_PHI = 0.5
 DEFAULT_NUM_OBJECTIVES = 2
+
+
+@dataclass(frozen=True)
+class EpisodeRunResult:
+    """Result payload returned by a process running one complete episode."""
+
+    run_idx: int
+    history: object
+    optimal_policy: object | None = None
+    q_values_player1: object | None = None
+    q_values_player2: object | None = None
 
 
 @dataclass(frozen=True)
