@@ -58,6 +58,7 @@ Thumbs.db
 
 # Generated figures, tables, and experiment artifacts
 results/
+cluster-results/**/
 outputs/
 artifacts/
 reports/

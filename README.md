@@ -82,7 +82,7 @@ poetry run python -m uu.ai.thesis.cli.play --help
 To get a quick experiment running, run the following command:
 
 ```shell
-poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLS --title2 AC --eps-theta 1.0 --eps-decay
+poetry run python -m uu.ai.thesis.cli.play --game-type ipd --title1 QLS --title2 AC --eps-theta 1.0 --eps-decay --phi 0.5 --morl
 ```
 
 ## Running the Experiments

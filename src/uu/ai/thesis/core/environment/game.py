@@ -145,7 +145,7 @@ class IntrinsicReward(Reward):
             else:
                 pay1_intrinsic = 0
         elif self.player.strategy.value[1] == Morality.VIRTUE_ETHICS_MIXED:
-            mixed_beta = int(self.player.mixed_beta)
+            mixed_beta = self.player.mixed_beta
             k_normalised = self.reward_base / self.reward_base
             # If this agent cooperated
             if action_p1 == 0:

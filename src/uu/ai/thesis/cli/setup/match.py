@@ -153,6 +153,7 @@ def store_raw_data(destination_folder: Path, num_runs: int) -> None:
         player2_path.mkdir(parents=True, exist_ok=True)
 
     # Store game [extrinsic] reward
+    # TODO [Wilder]: We have to use an index for the column names to avoid issues.
     axis_labels = ["episode" for i in range(num_runs)]
 
     df_reward_game_player1 = pd.concat([df["reward_game_player1"] for df in rewards_dataframes], axis=1)

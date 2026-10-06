@@ -5,18 +5,22 @@ Typer-based CLI for configuring iterated prisoner's dilemma runs.
 This module exposes a small command-line interface that resolves experiment
 parameters into a serialized configuration payload.
 """
+import os
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict
 import json
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, TypeAlias, Callable
 
 import typer
+from numpy.random import SeedSequence
 
 from uu import logger
 from uu.ai.thesis.cli import payoff_matrices
 from uu.ai.thesis.cli.setup.match import create_pair_of_players, store_raw_data, save_history, run_one_episode_static, \
     run_one_episode_mixed, store_learning_data, run_one_episode
-from uu.ai.thesis.core.data.model import build_game_config, GameConfig
+from uu.ai.thesis.core.data.model import build_game_config, GameConfig, EpisodeRunResult
 from uu.ai.thesis.core.environment.game import Game, IterativeMultiObjectiveGame, IterativeSingleObjectiveGame
 from uu.ai.thesis.core.functions import RandomNumberGenerator
 from uu.ai.thesis.core.rl.agent import Player
@@ -24,6 +28,7 @@ from uu.ai.thesis.core.rl.types import Strategy
 
 app = typer.Typer(add_completion=False, help="Plays iterative matches with 2 players and different learning algorithms "
                                              "given a game type and a set of parameters.")
+EpisodeWorker: TypeAlias = Callable[[GameConfig, int, SeedSequence, Path], EpisodeRunResult]
 
 
 def create_game(config: GameConfig, player1: Player, player2: Player) -> Game:
@@ -46,6 +51,114 @@ def create_game(config: GameConfig, player1: Player, player2: Player) -> Game:
     """
     game_class = IterativeMultiObjectiveGame if config.morl else IterativeSingleObjectiveGame
     return game_class(player1, player2, payoff_matrices[config.game_type])
+
+
+def _results_path(config: GameConfig) -> Path:
+    results_path = Path("results") / f"{config.game_type}-phi-{config.phi}" / config.destination_folder
+    results_path.mkdir(parents=True, exist_ok=True)
+    return results_path
+
+
+def _create_single_player_pair(config: GameConfig) -> tuple[Player, Player]:
+    strategy_p1 = Strategy[config.title1]
+    strategy_p2 = Strategy[config.title2]
+    return create_pair_of_players(
+        game_config=config,
+        strategy_p1=strategy_p1,
+        strategy_p2=strategy_p2,
+        num_runs=1,
+    )[0]
+
+
+def _create_run_rng(run_seed: SeedSequence, run_idx: int, results_path: Path) -> RandomNumberGenerator:
+    rng = RandomNumberGenerator(run_seed)
+    rng.generate(results_path, Path(f"child_seeds_run_{run_idx}.txt"))
+    return rng
+
+
+def _run_static_pair(config: GameConfig, run_idx: int, run_seed: int, results_path: Path) -> EpisodeRunResult:
+    player1, player2 = _create_single_player_pair(config)
+    game = create_game(config, player1, player2)
+    rng = _create_run_rng(run_seed, run_idx, results_path)
+
+    history = run_one_episode_static(
+        destination_folder=results_path,
+        game=game,
+        num_iter=config.num_iterations,
+        random_numbers_stream=rng,
+    )
+
+    return EpisodeRunResult(run_idx=run_idx, history=history)
+
+
+def _run_mixed_pair(config: GameConfig, run_idx: int, run_seed: int, results_path: Path) -> EpisodeRunResult:
+    player1, player2 = _create_single_player_pair(config)
+    game = create_game(config, player1, player2)
+    rng = _create_run_rng(run_seed, run_idx, results_path)
+
+    history, result, q_values_player1 = run_one_episode_mixed(
+        config=config,
+        counter=run_idx,
+        destination_folder=results_path,
+        game=game,
+        num_iter=config.num_iterations,
+        random_numbers_stream=rng,
+    )
+
+    return EpisodeRunResult(
+        run_idx=run_idx,
+        history=history,
+        optimal_policy=result,
+        q_values_player1=q_values_player1,
+    )
+
+
+def _run_qlearning_pair(config: GameConfig, run_idx: int, run_seed: int, results_path: Path) -> EpisodeRunResult:
+    player1, player2 = _create_single_player_pair(config)
+    game = create_game(config, player1, player2)
+    rng = _create_run_rng(run_seed, run_idx, results_path)
+
+    history, result, q_values_player1, q_values_player2 = run_one_episode(
+        config=config,
+        counter=run_idx,
+        destination_folder=results_path,
+        game=game,
+        num_iter=config.num_iterations,
+        random_numbers_stream=rng,
+    )
+
+    return EpisodeRunResult(
+        run_idx=run_idx,
+        history=history,
+        optimal_policy=result,
+        q_values_player1=q_values_player1,
+        q_values_player2=q_values_player2,
+    )
+
+
+def _run_episodes_in_processes(
+    config: GameConfig,
+    results_path: Path,
+    worker: EpisodeWorker,
+) -> list[EpisodeRunResult]:
+    run_seeds = SeedSequence(config.master_seed).spawn(config.num_runs)
+    ordered_results: list[EpisodeRunResult | None] = [None] * config.num_runs
+
+    max_workers = min(config.num_runs, os.process_cpu_count() or 1)
+
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(worker, config, run_idx, run_seeds[run_idx - 1], results_path)
+            for run_idx in range(1, config.num_runs + 1)
+        ]
+
+        for future in as_completed(futures):
+            result = future.result()
+            save_history(history=result.history, run_idx=result.run_idx, destination_folder=results_path)
+            ordered_results[result.run_idx - 1] = result
+            logger.info(f"Finished run {result.run_idx}, {config.title1} vs {config.title2}")
+
+    return [result for result in ordered_results if result is not None]
 
 
 def run_static(config: GameConfig) -> None:
@@ -82,37 +195,16 @@ def run_static(config: GameConfig) -> None:
     title1 = config.title1
     title2 = config.title2
     num_runs = config.num_runs
-    num_iterations = config.num_iterations
     destination_folder = config.destination_folder
-    master_seed = config.master_seed
 
     logger.info(
-        f"Running {title1} vs {title2}, {num_runs} runs, {num_iterations} iterations each, storing in {destination_folder}")
+        f"Running {title1} vs {title2}, {num_runs} runs, {config.num_iterations} iterations each, storing in {destination_folder}")
 
     if "QL" in title1 or "QL" in title2:
         raise ValueError("This is not the right function for these player types!")
 
-    results_path = Path("results") / config.game_type / destination_folder
-    results_path.mkdir(parents=True, exist_ok=True)
-
-    strategy_p1 = Strategy[title1]
-    strategy_p2 = Strategy[title2]
-    pairs_of_players = create_pair_of_players(game_config=config, strategy_p1=strategy_p1, strategy_p2=strategy_p2,
-                                              num_runs=num_runs)
-
-    # Instantiate the RandomNumberGenerator before I run my n runs - so that all n runs share a single set of RN streams (4, to be exact) and read from it sequentially
-    rng = RandomNumberGenerator(master_seed)
-    rng.generate(results_path)
-
-    counter = 0
-    for player1, player2 in pairs_of_players:
-        counter += 1
-        game = create_game(config, player1, player2)
-        global_history = run_one_episode_static(destination_folder=results_path, game=game,
-                                                num_iter=num_iterations, random_numbers_stream=rng)
-        save_history(history=global_history, run_idx=counter, destination_folder=results_path)
-        logger.info(f"finished run {counter}, {title1} vs {title2}")
-
+    results_path = _results_path(config)
+    _run_episodes_in_processes(config=config, results_path=results_path, worker=_run_static_pair)
     store_raw_data(destination_folder=results_path, num_runs=num_runs)
 
 
@@ -151,42 +243,19 @@ def run_qlearning_vs_static(config: GameConfig) -> None:
     title1 = config.title1
     title2 = config.title2
     num_runs = config.num_runs
-    num_iterations = config.num_iterations
     destination_folder = config.destination_folder
-    master_seed = config.master_seed
 
     logger.info(
-        f"Running {title1} vs {title2}, {num_runs} runs, {num_iterations} iterations each, storing in {destination_folder}")
+        f"Running {title1} vs {title2}, {num_runs} runs, {config.num_iterations} iterations each, storing in {destination_folder}")
 
     if 'QL' not in title1:
         raise ValueError("This is not the right function for these player types!")
 
-    results_path = Path("results") / config.game_type / destination_folder
-    results_path.mkdir(parents=True, exist_ok=True)
+    results_path = _results_path(config)
+    run_results = _run_episodes_in_processes(config=config, results_path=results_path, worker=_run_mixed_pair)
 
-    strategy_p1 = Strategy[title1]
-    strategy_p2 = Strategy[title2]
-    pairs_of_players = create_pair_of_players(game_config=config, strategy_p1=strategy_p1, strategy_p2=strategy_p2,
-                                              num_runs=num_runs)
-
-    # Instantiate the RandomNumberGenerator before I run my n runs - so that all n runs share a single set of RN streams (4, to be exact) and read from it sequentially
-    rng = RandomNumberGenerator(master_seed)
-    rng.generate(results_path)
-
-    optimal_policies = list()
-    q_values_player1 = list()
-    counter = 0
-    for player1, player2 in pairs_of_players:
-        counter += 1
-        game = create_game(config, player1, player2)
-        global_history, result, history_q_values_player1 = run_one_episode_mixed(config=config, counter=counter,
-                                                                                 destination_folder=results_path,
-                                                                                 game=game, num_iter=num_iterations,
-                                                                                 random_numbers_stream=rng)
-        save_history(history=global_history, run_idx=counter, destination_folder=results_path)
-        optimal_policies.append(result)  # Save the optimal policies
-        q_values_player1.append(history_q_values_player1)
-        logger.info(f"Finished run {counter}, {title1} vs {title2}.")
+    optimal_policies = [result.optimal_policy for result in run_results]
+    q_values_player1 = [result.q_values_player1 for result in run_results]
 
     ## Store raw data - all 100 data points for each type of reward
     store_raw_data(destination_folder=results_path, num_runs=num_runs)
@@ -232,46 +301,20 @@ def run_qlearning_vs_qlearning(config: GameConfig) -> None:
     title1 = config.title1
     title2 = config.title2
     num_runs = config.num_runs
-    num_iterations = config.num_iterations
     destination_folder = config.destination_folder
-    master_seed = config.master_seed
 
     logger.info(
-        f"Running {title1} vs {title2}, {num_runs} runs, {num_iterations} iterations each, storing in {destination_folder}")
+        f"Running {title1} vs {title2}, {num_runs} runs, {config.num_iterations} iterations each, storing in {destination_folder}")
 
     if 'QL' not in title1 or 'QL' not in title2:
         raise ValueError("This is not the right function for these player types!")
 
-    results_path = Path("results") / config.game_type / destination_folder
-    results_path.mkdir(parents=True, exist_ok=True)
+    results_path = _results_path(config)
+    run_results = _run_episodes_in_processes(config=config, results_path=results_path, worker=_run_qlearning_pair)
 
-    strategy_p1 = Strategy[title1]
-    strategy_p2 = Strategy[title2]
-    pairs_of_players = create_pair_of_players(game_config=config, strategy_p1=strategy_p1, strategy_p2=strategy_p2,
-                                              num_runs=num_runs)
-
-    # Instantiate the RN_generator before I run my n runs - so that all n runs share a single set of RN streams (4, to be exact) and read from it sequentially
-    rng = RandomNumberGenerator(master_seed)
-    rng.generate(results_path)
-
-    optimal_policies = list()
-    q_values_player1 = list()
-    q_values_player2 = list()
-    counter = 0
-    for player1, player2 in pairs_of_players:
-        counter += 1
-        game = create_game(config, player1, player2)
-        global_history, result, history_q_values_player1, history_q_values_player2 = run_one_episode(config=config,
-                                                                                                   counter=counter,
-                                                                                                   destination_folder=results_path,
-                                                                                                   game=game,
-                                                                                                   num_iter=num_iterations,
-                                                                                                   random_numbers_stream=rng)
-        optimal_policies.append(result)  # save the optimal policies
-        q_values_player1.append(history_q_values_player1)
-        q_values_player2.append(history_q_values_player2)
-        save_history(history=global_history, run_idx=counter, destination_folder=results_path)
-        logger.info(f"Finished run {counter}, {title1} vs {title2}")
+    optimal_policies = [result.optimal_policy for result in run_results]
+    q_values_player1 = [result.q_values_player1 for result in run_results]
+    q_values_player2 = [result.q_values_player2 for result in run_results]
 
     ## Store raw data - all 100 data points for each type of reward:
     store_raw_data(destination_folder=results_path, num_runs=num_runs)
@@ -343,6 +386,9 @@ def main(
     extra : str | None, optional
         Optional extra label appended to the destination folder name.
     """
+
+    t0 = time.time()
+
     config = build_game_config(
         game_type=game_type,
         title1=title1,
@@ -375,6 +421,9 @@ def main(
     else:
         logger.info("Player 1 is not a Q-learning player, running static strategy.")
         run_static(config=config)
+
+    total_runtime = time.time() - t0
+    logger.info(f"Match {title1} vs {title2} completed in {total_runtime / 60:.2f} hours.")
 
 
 if __name__ == "__main__":

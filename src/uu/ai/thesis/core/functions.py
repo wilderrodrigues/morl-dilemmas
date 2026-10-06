@@ -30,7 +30,7 @@ class RandomNumberGenerator:
         Nested list of NumPy random-number generators grouped by player.
     """
 
-    def __init__(self, master_seed: int, n_players: int = 2, n_children: int = 5) -> None:
+    def __init__(self, master_seed: int | SeedSequence, n_players: int = 2, n_children: int = 5) -> None:
         """Initialize the random stream generator.
 
         Parameters
@@ -47,7 +47,7 @@ class RandomNumberGenerator:
         self.n_children = n_children
         self.player_streams = [list() for _ in range(self.n_players)]
 
-    def generate(self, destination_folder: Path) -> None:
+    def generate(self, destination_folder: Path, seed_path: Path | None = None) -> None:
         """Generate player-specific random streams and persist child seeds.
 
         One child seed is created per player from the master seed. Each child
@@ -59,13 +59,19 @@ class RandomNumberGenerator:
         ----------
         destination_folder : Path
             Directory where the child seed metadata will be stored.
+        seed_path: Path | None, optional
+            Child seed metadata file name. Defaults to ``child_seeds.txt``.
 
         Raises
         ------
         ValueError
             If ``destination_folder`` is not a directory.
         """
-        seed_seq = SeedSequence(self.master_seed)
+        seed_seq = (
+            self.master_seed
+            if isinstance(self.master_seed, SeedSequence)
+            else SeedSequence(self.master_seed)
+        )
 
         child_seeds = seed_seq.spawn(self.n_players)
 
@@ -75,7 +81,9 @@ class RandomNumberGenerator:
         if not destination_folder.exists():
             destination_folder.mkdir(parents=True, exist_ok=True)
 
-        with open(destination_folder / "child_seeds.txt", "w") as fp:
+        seed_file = seed_path or Path("child_seeds.txt")
+
+        with open(destination_folder / seed_file, "w") as fp:
             for item in child_seeds:
                 fp.write(f"{str(item)}\n")
             logger.info(f"Child seeds generated in {destination_folder} for players 1 and 2.")

@@ -84,17 +84,17 @@ class EpsilonGreedy(Policy):
             eps = (eps_initial - eps_final) * r + eps_final
 
         if prob <= eps:
-            # make a random move with probability eps
-            reason = 'random, due to eps'
+            # Make a random move with probability eps
+            reason = "random, due to eps"
             return int(self.random_numbers[2] < 0.5), eps, reason
         else:
-            # move optimally based on current Q-value estimates, if they are not empty
-            if not np.any(self.q_values[self.state_index]):  # if Q-values for this state are empty
-                reason = 'random, due to empty Q-values'
+            # Move optimally based on current Q-value estimates, if they are not empty
+            if not np.any(self.q_values[self.state_index]):  # If Q-values for this state are empty
+                reason = "random, due to empty Q-values"
                 return int(self.random_numbers[0] < 0.5), eps, reason  # make a random move
             else:
                 optimal_policy = np.argmax(self.q_values, axis=1)  # list(np.argmax(self.q_values, axis=1))
-                reason = 'greedy, according to learnt Q-values'
+                reason = "greedy, according to learnt Q-values"
                 return int(bool(optimal_policy[self.state_index])), eps, reason
 
 

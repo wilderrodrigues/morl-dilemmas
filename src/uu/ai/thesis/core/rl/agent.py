@@ -134,14 +134,14 @@ class Player:
         else:
             raise ValueError(f"Strategy {self.strategy} not supported by this agent when making a fixed move.")
 
-    def scalarise_reward(self, reward_vector: dict[str, float]) -> float:
+    def scalarise_reward(self, reward_vector: dict[str, float] | float) -> float:
         """Scalarise a reward vector, or return the individual reward directly.
 
         Parameters
         ----------
-        reward_vector : dict[str, float]
-            Mapping containing at least an ``"individual"`` objective and,
-            when using MORL, a ``"moral"`` objective.
+        reward_vector : dict[str, float] | float
+            Mapping containing at least an ``"individual"`` objective or a fload reward and,
+            when using MORL and a utility function, a ``"moral"`` objective.
 
         Returns
         -------
@@ -150,7 +150,10 @@ class Player:
             individual objective is used unchanged.
         """
         if self.utility is None:
-            return reward_vector["individual"]
+            if isinstance(reward_vector, dict):
+                return reward_vector["individual"]
+            else:
+                return reward_vector
 
         return self.utility.scalarise(reward_vector)
 
