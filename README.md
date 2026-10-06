@@ -148,18 +148,9 @@ out into the core package, where I abstracted the environment, agent, and policy
 has been moved into a command line interface (CLI), fully parametrised for easy use.
 
 ```bibtex
-@INPROCEEDINGS{Tennant-ijcai2023p36,
-  title     = {Modeling Moral Choices in Social Dilemmas with Multi-Agent Reinforcement Learning},
-  author    = {Tennant, Elizaveta and Hailes, Stephen and Musolesi, Mirco},
-  booktitle = {Proceedings of the Thirty-Second International Joint Conference on
-               Artificial Intelligence, {IJCAI-23}},
-  publisher = {International Joint Conferences on Artificial Intelligence Organization},
-  editor    = {Edith Elkind},
-  pages     = {317--325},
-  year      = {2023},
-  month     = {8},
-  note      = {Main Track},
-  doi       = {10.24963/ijcai.2023/36},
-  url       = {https://doi.org/10.24963/ijcai.2023/36},
+@inproceedings{rodriguesincorporating,
+  title={Incorporating Moral Choices in Social Dilemmas with Multi-Objective Reinforcement Learning},
+  author={Rodrigues, Wilder Cabral and R{\u{a}}dulescu, Roxana},
+  booktitle={The 38th Benelux Conference on Artificial Intelligence and the 35th Belgian Dutch Conference on Machine Learning}
 }
 ```
